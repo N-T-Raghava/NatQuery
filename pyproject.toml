@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "natquery"
+version = "0.0.1"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+natquery = "natquery.cli.main:main"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks integration tests"
+]

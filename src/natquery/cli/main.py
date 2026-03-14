@@ -1,0 +1,40 @@
+import sys
+from natquery.cli.commands import (
+    connect_command,
+    reset_command,
+    show_config_command
+)
+from natquery.cli.shell import start_shell
+from natquery.config.settings import Settings
+
+
+def main():
+
+    if len(sys.argv) > 1:
+
+        cmd = sys.argv[1]
+
+        if cmd == "connect":
+            connect_command()
+            return
+
+        elif cmd == "reset":
+            reset_command()
+            return
+
+        elif cmd == "config":
+            show_config_command()
+            return
+
+        else:
+            print(f"Unknown command: {cmd}")
+            return
+
+    # No subcommand → start REPL
+
+    if not Settings.exists():
+        print("NatQuery not configured.")
+        print("Run: natquery connect")
+        return
+
+    start_shell()
