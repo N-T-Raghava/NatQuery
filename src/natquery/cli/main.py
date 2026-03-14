@@ -6,6 +6,7 @@ from natquery.cli.commands import (
 )
 from natquery.cli.shell import start_shell
 from natquery.config.settings import Settings
+from natquery.orchestration.workspace import initialize_workspace
 
 
 def main():
@@ -37,4 +38,5 @@ def main():
         print("Run: natquery connect")
         return
 
+    initialize_workspace()
     start_shell()

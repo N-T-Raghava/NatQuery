@@ -1,5 +1,3 @@
-# src/natquery/execution/engine.py
-
 from natquery.config.connection import get_connection, close_connection
 
 
