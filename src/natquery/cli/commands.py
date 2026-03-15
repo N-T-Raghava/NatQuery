@@ -1,5 +1,3 @@
-# src/natquery/cli/commands.py
-
 import json
 from pathlib import Path
 from getpass import getpass
@@ -11,14 +9,23 @@ CONFIG_FILE = BASE_DIR / "config.json"
 
 def connect_command():
     """
-    Interactive setup for NatQuery.
-    Creates .natquery/config.json
+    This is Interactive setup for NatQuery.
+    Creates ".natquery/config.json", which contains:
+    {
+        "db_host": "",
+        "db_port": "",
+        "db_name": "",
+        "db_user": "",
+        "db_password": "",
+        "llm_provider": "",
+        "llm_api_key": "",
+        "llm_model": ""
+    }
     """
 
-    print("=== NatQuery Setup ===")
+    print("============ NatQuery Setup ============")
 
     BASE_DIR.mkdir(exist_ok=True)
-
     config = {
         "db_host": input("DB Host (e.g. 127.0.0.1): ").strip(),
         "db_port": input("DB Port (e.g. 5432): ").strip(),
@@ -29,17 +36,18 @@ def connect_command():
         "llm_api_key": getpass("LLM API Key: "),
         "llm_model": input("LLM Model (e.g. llama-3.1-70b-versatile): ").strip(),
     }
-
+    
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
 
     print("\nConfiguration saved successfully.")
-    print("You can now run: natquery\n")
+    print("You can now run: natquery, to enter thr CLI.\n")
 
 
 def reset_command():
     """
     Deletes configuration.
+    Deletes the ".natquery/config.json" completely.
     """
 
     if CONFIG_FILE.exists():
