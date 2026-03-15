@@ -5,8 +5,7 @@ from typing import Dict
 
 class Settings:
     """
-    Configuration manager for NatQuery.
-    Reads configuration from .natquery/config.json
+    Configuration manager: Reads configuration from .natquery/config.json
     """
 
     BASE_DIR = Path(".natquery")
@@ -51,6 +50,7 @@ class Settings:
             "dbname": config["db_name"],
             "user": config["db_user"],
             "password": config["db_password"],
+            "sslmode": config.get("db_sslmode"),
         }
 
     @classmethod
