@@ -2,7 +2,8 @@ from pathlib import Path
 import json
 from natquery.config.connection import get_connection, close_connection
 from natquery.schema.extractor import extract_schema
-
+from natquery.observability.logger import NatQueryLogger
+from natquery.config.settings import Settings
 
 def initialize_workspace():
 
@@ -13,7 +14,6 @@ def initialize_workspace():
         return
 
     # Get DB name from config
-    from natquery.config.settings import Settings
     db_config = Settings.get_db_config()
     db_name = db_config["dbname"]
 
@@ -33,4 +33,11 @@ def initialize_workspace():
     with open(schema_file, "w") as f:
         json.dump(schema, f, indent=2)
 
+    NatQueryLogger.log_event(
+        level="INFO",
+        event="schema_extracted",
+        db_name=db_name,
+        conv_id=None,
+        details={"schema_path": str(schema_file)}
+    )
     print(f"Schema saved to {schema_file}")

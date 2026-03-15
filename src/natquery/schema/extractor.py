@@ -1,5 +1,3 @@
-# src/natquery/schema/extractor.py
-
 def extract_schema(conn):
     """
     Extract table names and column names from public schema.

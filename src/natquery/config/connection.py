@@ -1,7 +1,8 @@
 import psycopg2
 from psycopg2.extensions import connection as PGConnection
 from psycopg2.extras import RealDictCursor
-from .settings import Settings
+from natquery.config.settings import Settings
+from natquery.observability.logger import NatQueryLogger
 
 
 def get_connection() -> PGConnection:
@@ -15,6 +16,19 @@ def get_connection() -> PGConnection:
     """
 
     db_config = Settings.get_db_config()
+    db_name = db_config["dbname"]
+
+    # Log connection attempt
+    NatQueryLogger.log_event(
+        level="INFO",
+        event="db_connection_attempt",
+        db_name=db_name,
+        conv_id=None,
+        details={
+            "host": db_config["host"],
+            "port": db_config["port"]
+        }
+    )
 
     connect_args = {
         "host": db_config["host"],
@@ -25,7 +39,7 @@ def get_connection() -> PGConnection:
         "connect_timeout": 5,
     }
 
-    # Optional SSL connectivity
+    # Optional SSL
     sslmode = db_config.get("sslmode")
     if sslmode:
         connect_args["sslmode"] = sslmode
@@ -33,9 +47,28 @@ def get_connection() -> PGConnection:
     try:
         conn = psycopg2.connect(**connect_args)
         conn.autocommit = False
+
+        # Log success
+        NatQueryLogger.log_event(
+            level="INFO",
+            event="db_connection_success",
+            db_name=db_name,
+            conv_id=None
+        )
+
         return conn
 
     except psycopg2.OperationalError as e:
+
+        # Log failure
+        NatQueryLogger.log_event(
+            level="ERROR",
+            event="db_connection_failed",
+            db_name=db_name,
+            conv_id=None,
+            details={"error": str(e)}
+        )
+
         raise ConnectionError(
             f"Unable to connect to PostgreSQL server.\nDetails: {e}"
         ) from e
@@ -54,6 +87,22 @@ def close_connection(conn: PGConnection) -> None:
     """
     if conn:
         try:
+            db_name = conn.get_dsn_parameters().get("dbname")
+
             conn.close()
-        except Exception:
-            pass
+
+            NatQueryLogger.log_event(
+                level="INFO",
+                event="db_connection_closed",
+                db_name=db_name,
+                conv_id=None
+            )
+
+        except Exception as e:
+            NatQueryLogger.log_event(
+                level="ERROR",
+                event="db_connection_close_failed",
+                db_name=None,
+                conv_id=None,
+                details={"error": str(e)}
+            )
