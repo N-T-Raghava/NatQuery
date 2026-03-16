@@ -16,8 +16,8 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "black",
-    "ruff"
+    "black==25.1.0",
+    "ruff=0.15.6"
 ]
 
 [tool.setuptools.packages.find]
@@ -33,7 +33,7 @@ markers = [
 
 [tool.black]
 line-length = 88
-target-version = ["py310", "py311", "py312"]
+target-version = ["py310"]
 
 [tool.ruff]
 line-length = 88
