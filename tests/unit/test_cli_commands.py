@@ -18,6 +18,7 @@ class TestConnectCommand:
         # Mock user inputs - db_name is the first input
         mock_input.side_effect = [
             "testdb",  # db_name
+            "no",  # use_ssl
             "localhost",  # db_host
             "5432",  # db_port
             "testuser",  # db_user
