@@ -17,7 +17,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "black==25.1.0",
-    "ruff=0.15.6"
+    "ruff==0.15.6"
 ]
 
 [tool.setuptools.packages.find]
