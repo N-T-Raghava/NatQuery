@@ -11,10 +11,6 @@ CONFIG_FILE = BASE_DIR / "config.json"
 def connect_command():
     """
     Interactive setup for NatQuery.
-    Creates:
-        ~/.natquery/<db_name>/config.json
-    Also sets active DB in:
-        ~/.natquery/current_db
     """
 
     print("============ NatQuery Setup ============")
@@ -26,6 +22,10 @@ def connect_command():
     db_dir = BASE_DIR / db_name
     db_dir.mkdir(parents=True, exist_ok=True)
 
+    # --- SSL Prompt ---
+    ssl_input = input("Use SSL? (yes/no): ").strip().lower()
+    use_ssl = ssl_input in {"yes", "y"}
+
     config = {
         "db_host": input("DB Host (e.g. 127.0.0.1): ").strip(),
         "db_port": input("DB Port (e.g. 5432): ").strip(),
@@ -36,6 +36,10 @@ def connect_command():
         "llm_api_key": getpass("LLM API Key: "),
         "llm_model": input("LLM Model (e.g. llama-3.1-70b-versatile): ").strip(),
     }
+
+    # Only add sslmode if required
+    if use_ssl:
+        config["sslmode"] = "require"
 
     config_file = db_dir / "config.json"
     with open(config_file, "w") as f:
