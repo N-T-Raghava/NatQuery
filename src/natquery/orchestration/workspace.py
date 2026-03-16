@@ -7,23 +7,21 @@ from natquery.config.settings import Settings
 
 
 def initialize_workspace():
+    """
+    Ensures schema is extracted and saved under:
+        ~/.natquery/<db_name>/schema.json
+    """
 
-    base_dir = Path.home() / ".natquery"
-    config = base_dir / "config.json"
-
-    if not config.exists():
-        return
-
-    # Get DB name from config
     db_config = Settings.get_db_config()
     db_name = db_config["dbname"]
 
+    base_dir = Path.home() / ".natquery"
     workspace_dir = base_dir / db_name
-    workspace_dir.mkdir(exist_ok=True)
+    workspace_dir.mkdir(parents=True, exist_ok=True)
 
     schema_file = workspace_dir / "schema.json"
 
-    # If schema already exists, skip
+    # Skip if already extracted
     if schema_file.exists():
         return
 
@@ -41,4 +39,5 @@ def initialize_workspace():
         conv_id=None,
         details={"schema_path": str(schema_file)},
     )
+
     print(f"Schema saved to {schema_file}")

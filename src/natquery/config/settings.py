@@ -5,29 +5,45 @@ from typing import Dict
 
 class Settings:
     """
-    Configuration manager: Reads configuration from .natquery/config.json
+    Configuration manager:
+    Reads configuration from:
+        ~/.natquery/<active_db>/config.json
     """
 
-    BASE_DIR = Path(".natquery")
-    CONFIG_FILE = BASE_DIR / "config.json"
+    BASE_DIR = Path.home() / ".natquery"
+
+    @classmethod
+    def _get_active_db_name(cls) -> str:
+        current_file = cls.BASE_DIR / "current_db"
+
+        if not current_file.exists():
+            raise RuntimeError("No active database configured.\nRun: natquery connect")
+
+        return current_file.read_text().strip()
+
+    @classmethod
+    def _get_config_path(cls) -> Path:
+        db_name = cls._get_active_db_name()
+        return cls.BASE_DIR / db_name / "config.json"
 
     @classmethod
     def exists(cls) -> bool:
-        """Check if config file exists."""
-        return cls.CONFIG_FILE.exists()
+        return cls._get_config_path().exists()
 
     @classmethod
     def load_config(cls) -> Dict:
-        """Load configuration from config.json."""
-        if not cls.exists():
-            raise RuntimeError("NatQuery not configured.\nRun: natquery connect")
+        config_path = cls._get_config_path()
 
-        with open(cls.CONFIG_FILE, "r") as f:
+        if not config_path.exists():
+            raise RuntimeError(
+                "NatQuery not configured properly.\nRun: natquery connect"
+            )
+
+        with open(config_path, "r") as f:
             return json.load(f)
 
     @classmethod
     def get_db_config(cls) -> Dict[str, str]:
-        """Return database configuration."""
         config = cls.load_config()
 
         required = [
@@ -53,7 +69,6 @@ class Settings:
 
     @classmethod
     def get_llm_config(cls) -> Dict[str, str]:
-        """Return LLM configuration."""
         config = cls.load_config()
 
         required = [

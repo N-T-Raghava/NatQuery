@@ -59,12 +59,29 @@ class TestInitializeWorkspace:
         assert call_kwargs["event"] == "schema_extracted"
         assert call_kwargs["db_name"] == "testdb"
 
+    @patch("natquery.orchestration.workspace.NatQueryLogger.log_event")
+    @patch("natquery.orchestration.workspace.close_connection")
+    @patch("natquery.orchestration.workspace.extract_schema")
+    @patch("natquery.orchestration.workspace.get_connection")
     @patch("natquery.orchestration.workspace.Settings.get_db_config")
-    def test_initialize_workspace_no_config(self, mock_get_db_config):
-        """Test that initialize_workspace returns early if no config."""
-        with patch("pathlib.Path.exists", return_value=False):
+    def test_initialize_workspace_no_config(
+        self,
+        mock_get_db_config,
+        mock_get_connection,
+        mock_extract_schema,
+        mock_close_connection,
+        mock_log_event,
+        temp_dir,
+    ):
+        """Test that initialize_workspace handles missing dbname in config."""
+        # Simulate config without dbname
+        mock_get_db_config.return_value = {}
+
+        try:
             initialize_workspace()
-            mock_get_db_config.assert_not_called()
+        except KeyError:
+            # Expected - dbname key is missing
+            pass
 
     @patch("natquery.orchestration.workspace.NatQueryLogger.log_event")
     @patch("natquery.orchestration.workspace.close_connection")

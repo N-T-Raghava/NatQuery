@@ -6,7 +6,7 @@ from pathlib import Path
 
 class NatQueryLogger:
 
-    BASE_DIR = Path(".natquery")
+    BASE_DIR = Path.home() / ".natquery"
     SYSTEM_LOG = BASE_DIR / "system.log"
 
     @staticmethod

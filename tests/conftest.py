@@ -2,6 +2,7 @@ import pytest
 import json
 import tempfile
 import os
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 
@@ -21,6 +22,26 @@ def sample_config():
 
 
 @pytest.fixture
+def temp_natquery_dir(sample_config):
+    """Create a temporary NatQuery directory structure with config."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base_dir = Path(tmpdir) / ".natquery"
+        base_dir.mkdir(exist_ok=True)
+
+        # Create current_db file
+        (base_dir / "current_db").write_text("testdb")
+
+        # Create database-specific config
+        db_dir = base_dir / "testdb"
+        db_dir.mkdir(exist_ok=True)
+        config_file = db_dir / "config.json"
+        with open(config_file, "w") as f:
+            json.dump(sample_config, f)
+
+        yield base_dir
+
+
+@pytest.fixture
 def temp_config_file(sample_config):
     """Create a temporary config file."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -29,6 +50,13 @@ def temp_config_file(sample_config):
 
     yield temp_path
     os.unlink(temp_path)
+
+
+@pytest.fixture
+def temp_dir():
+    """Temporary directory for testing file operations."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
 
 
 @pytest.fixture
@@ -46,7 +74,7 @@ def mock_db_connection():
 
 
 @pytest.fixture
-def mock_llm_client():
+def temp_llm_client():
     """Mock LLM client response."""
     with patch("groq.Groq") as mock_groq:
         mock_client = MagicMock()
@@ -59,7 +87,21 @@ def mock_llm_client():
 
 
 @pytest.fixture
-def temp_dir():
-    """Temporary directory for testing file operations."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield tmpdir
+def temp_natquery_dir_alt(sample_config, temp_dir):
+    """Alternative temporary NatQuery directory with different database."""
+    base_dir = Path(temp_dir) / ".natquery"
+    base_dir.mkdir(exist_ok=True)
+
+    # Create current_db file
+    (base_dir / "current_db").write_text("proddb")
+
+    # Create database-specific config
+    db_dir = base_dir / "proddb"
+    db_dir.mkdir(exist_ok=True)
+    config_file = db_dir / "config.json"
+    config = sample_config.copy()
+    config["db_name"] = "proddb"
+    with open(config_file, "w") as f:
+        json.dump(config, f)
+
+    return base_dir
