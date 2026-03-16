@@ -24,10 +24,7 @@ def get_connection() -> PGConnection:
         event="db_connection_attempt",
         db_name=db_name,
         conv_id=None,
-        details={
-            "host": db_config["host"],
-            "port": db_config["port"]
-        }
+        details={"host": db_config["host"], "port": db_config["port"]},
     )
 
     connect_args = {
@@ -50,10 +47,7 @@ def get_connection() -> PGConnection:
 
         # Log success
         NatQueryLogger.log_event(
-            level="INFO",
-            event="db_connection_success",
-            db_name=db_name,
-            conv_id=None
+            level="INFO", event="db_connection_success", db_name=db_name, conv_id=None
         )
 
         return conn
@@ -66,7 +60,7 @@ def get_connection() -> PGConnection:
             event="db_connection_failed",
             db_name=db_name,
             conv_id=None,
-            details={"error": str(e)}
+            details={"error": str(e)},
         )
 
         raise ConnectionError(
@@ -95,7 +89,7 @@ def close_connection(conn: PGConnection) -> None:
                 level="INFO",
                 event="db_connection_closed",
                 db_name=db_name,
-                conv_id=None
+                conv_id=None,
             )
 
         except Exception as e:
@@ -104,5 +98,5 @@ def close_connection(conn: PGConnection) -> None:
                 event="db_connection_close_failed",
                 db_name=None,
                 conv_id=None,
-                details={"error": str(e)}
+                details={"error": str(e)},
             )

@@ -5,22 +5,27 @@ def extract_schema(conn):
 
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT table_name
         FROM information_schema.tables
         WHERE table_schema = 'public';
-    """)
+    """
+    )
 
     tables = cursor.fetchall()
 
     schema = {}
 
     for (table_name,) in tables:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT column_name
             FROM information_schema.columns
             WHERE table_name = %s
-        """, (table_name,))
+        """,
+            (table_name,),
+        )
 
         columns = cursor.fetchall()
         schema[table_name] = [col[0] for col in columns]

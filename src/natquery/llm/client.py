@@ -13,7 +13,7 @@ def generate_sql(user_query: str) -> str:
     db_config = Settings.get_db_config()
     db_name = db_config["dbname"]
 
-    schema_path = Path(".natquery") / db_name / "schema.json"
+    schema_path = Path.home() / ".natquery" / db_name / "schema.json"
 
     if schema_path.exists():
         with open(schema_path, "r") as f:

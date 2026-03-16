@@ -20,9 +20,7 @@ class Settings:
     def load_config(cls) -> Dict:
         """Load configuration from config.json."""
         if not cls.exists():
-            raise RuntimeError(
-                "NatQuery not configured.\nRun: natquery connect"
-            )
+            raise RuntimeError("NatQuery not configured.\nRun: natquery connect")
 
         with open(cls.CONFIG_FILE, "r") as f:
             return json.load(f)

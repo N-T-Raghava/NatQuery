@@ -16,7 +16,7 @@ def run_query(user_query: str):
         event="query_received",
         db_name=db_name,
         conv_id=conv_id,
-        details={"user_query": user_query}
+        details={"user_query": user_query},
     )
 
     # Generate SQL and log sql query generated
@@ -26,7 +26,7 @@ def run_query(user_query: str):
         event="llm_sql_generated",
         db_name=db_name,
         conv_id=conv_id,
-        details={"generated_sql": sql}
+        details={"generated_sql": sql},
     )
 
     # Execute SQL with timing
@@ -44,8 +44,8 @@ def run_query(user_query: str):
             conv_id=conv_id,
             details={
                 "rows_returned": rows_returned,
-                "execution_time_ms": execution_time_ms
-            }
+                "execution_time_ms": execution_time_ms,
+            },
         )
 
         # Log conversation summary
@@ -55,7 +55,7 @@ def run_query(user_query: str):
             user_query=user_query,
             generated_sql=sql,
             rows_returned=rows_returned,
-            execution_time_ms=execution_time_ms
+            execution_time_ms=execution_time_ms,
         )
 
         return result
@@ -67,7 +67,7 @@ def run_query(user_query: str):
             event="db_execution_failed",
             db_name=db_name,
             conv_id=conv_id,
-            details={"error": str(e)}
+            details={"error": str(e)},
         )
 
         raise

@@ -5,9 +5,10 @@ from natquery.schema.extractor import extract_schema
 from natquery.observability.logger import NatQueryLogger
 from natquery.config.settings import Settings
 
+
 def initialize_workspace():
 
-    base_dir = Path(".natquery")
+    base_dir = Path.home() / ".natquery"
     config = base_dir / "config.json"
 
     if not config.exists():
@@ -38,6 +39,6 @@ def initialize_workspace():
         event="schema_extracted",
         db_name=db_name,
         conv_id=None,
-        details={"schema_path": str(schema_file)}
+        details={"schema_path": str(schema_file)},
     )
     print(f"Schema saved to {schema_file}")

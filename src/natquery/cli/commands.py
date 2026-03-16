@@ -3,7 +3,7 @@ from pathlib import Path
 from getpass import getpass
 
 
-BASE_DIR = Path(".natquery")
+BASE_DIR = Path.home() / ".natquery"
 CONFIG_FILE = BASE_DIR / "config.json"
 
 
@@ -36,7 +36,7 @@ def connect_command():
         "llm_api_key": getpass("LLM API Key: "),
         "llm_model": input("LLM Model (e.g. llama-3.1-70b-versatile): ").strip(),
     }
-    
+
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
 

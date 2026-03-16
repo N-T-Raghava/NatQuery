@@ -12,5 +12,8 @@ def start_shell():
         if query.lower() in ["exit", "quit"]:
             break
 
-        result = run_query(query)
-        print(result)
+        try:
+            result = run_query(query)
+            print(result)
+        except Exception as e:
+            print(f"Error: {e}")

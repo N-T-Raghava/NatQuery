@@ -7,6 +7,19 @@ name = "natquery"
 version = "0.0.1"
 requires-python = ">=3.10"
 
+dependencies = [
+    "psycopg2-binary",
+    "groq"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "ruff"
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -17,3 +30,9 @@ natquery = "natquery.cli.main:main"
 markers = [
     "integration: marks integration tests"
 ]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88

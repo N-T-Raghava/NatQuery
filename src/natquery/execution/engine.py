@@ -12,10 +12,7 @@ def execute_sql(sql: str):
             columns = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
 
-            result = [
-                dict(zip(columns, row))
-                for row in rows
-            ]
+            result = [dict(zip(columns, row)) for row in rows]
         else:
             result = []
 
