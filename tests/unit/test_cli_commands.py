@@ -46,11 +46,13 @@ class TestConnectCommand:
                 config = json.load(f)
 
             expected = {
+                "connection_type": "standard",
                 "db_host": "localhost",
                 "db_port": "5432",
                 "db_name": "testdb",
                 "db_user": "testuser",
                 "db_password": "testpass",
+                "workspace_name": "testdb",
                 "llm_provider": "groq",
                 "llm_api_key": "test_key",
                 "llm_model": "llama3-8b-8192",

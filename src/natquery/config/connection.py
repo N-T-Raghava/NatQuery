@@ -9,14 +9,15 @@ def get_connection() -> PGConnection:
     """
     Creates and returns a PostgreSQL connection.
     Supports:
-        - Locally hosted databases
-        - Remote databases
-        - SSH Tunneled databases
-        - Cloud-managed (SSL) (optional)
+        - Standard host/port configuration
+        - DSN (connection string)
+        - SSL (optional)
     """
 
     db_config = Settings.get_db_config()
-    db_name = db_config["dbname"]
+
+    # Determine DB name safely (for logging)
+    db_name = db_config.get("dbname", "unknown_db")
 
     # Log connection attempt
     NatQueryLogger.log_event(
@@ -24,30 +25,46 @@ def get_connection() -> PGConnection:
         event="db_connection_attempt",
         db_name=db_name,
         conv_id=None,
-        details={"host": db_config["host"], "port": db_config["port"]},
+        details=db_config,
     )
 
-    connect_args = {
-        "host": db_config["host"],
-        "port": db_config["port"],
-        "dbname": db_config["dbname"],
-        "user": db_config["user"],
-        "password": db_config["password"],
-        "connect_timeout": 5,
-    }
-
-    # Optional SSL
-    sslmode = db_config.get("sslmode")
-    if sslmode:
-        connect_args["sslmode"] = sslmode
-
     try:
-        conn = psycopg2.connect(**connect_args)
+
+        # ---- DSN MODE ----
+        if db_config["type"] == "dsn":
+
+            conn = psycopg2.connect(
+                db_config["dsn"],
+                connect_timeout=5,
+            )
+
+        # ---- STANDARD MODE ----
+        else:
+
+            connect_args = {
+                "host": db_config["host"],
+                "port": db_config["port"],
+                "dbname": db_config["dbname"],
+                "user": db_config["user"],
+                "password": db_config["password"],
+                "connect_timeout": 5,
+            }
+
+            # Optional SSL
+            sslmode = db_config.get("sslmode")
+            if sslmode:
+                connect_args["sslmode"] = sslmode
+
+            conn = psycopg2.connect(**connect_args)
+
         conn.autocommit = False
 
         # Log success
         NatQueryLogger.log_event(
-            level="INFO", event="db_connection_success", db_name=db_name, conv_id=None
+            level="INFO",
+            event="db_connection_success",
+            db_name=db_name,
+            conv_id=None,
         )
 
         return conn

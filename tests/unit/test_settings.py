@@ -97,6 +97,7 @@ class TestSettingsGetDbConfig:
         with patch.object(Settings, "BASE_DIR", temp_natquery_dir):
             db_config = Settings.get_db_config()
             expected = {
+                "type": "standard",
                 "host": "localhost",
                 "port": 5432,
                 "dbname": "testdb",

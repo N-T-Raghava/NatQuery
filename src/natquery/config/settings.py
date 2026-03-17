@@ -43,9 +43,20 @@ class Settings:
             return json.load(f)
 
     @classmethod
-    def get_db_config(cls) -> Dict[str, str]:
+    def get_db_config(cls) -> Dict:
         config = cls.load_config()
 
+        if config.get("connection_type") == "dsn":
+            if "db_dsn" not in config or not config["db_dsn"]:
+                raise ValueError("Missing database DSN.")
+
+            return {
+                "type": "dsn",
+                "dsn": config["db_dsn"],
+                "dbname": config.get("db_name", "unknown_db"),
+            }
+
+        # Default: standard connection
         required = [
             "db_host",
             "db_port",
@@ -59,12 +70,13 @@ class Settings:
                 raise ValueError(f"Missing database config field: {key}")
 
         return {
+            "type": "standard",
             "host": config["db_host"],
             "port": config["db_port"],
             "dbname": config["db_name"],
             "user": config["db_user"],
             "password": config["db_password"],
-            "sslmode": config.get("db_sslmode"),
+            "sslmode": config.get("sslmode"),
         }
 
     @classmethod

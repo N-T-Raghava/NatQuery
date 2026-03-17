@@ -16,6 +16,7 @@ class TestGetConnection:
     ):
         """Test successful database connection."""
         mock_get_db_config.return_value = {
+            "type": "standard",
             "host": "localhost",
             "port": 5432,
             "dbname": "testdb",
@@ -45,7 +46,15 @@ class TestGetConnection:
             event="db_connection_attempt",
             db_name="testdb",
             conv_id=None,
-            details={"host": "localhost", "port": 5432},
+            details={
+                "type": "standard",
+                "host": "localhost",
+                "port": 5432,
+                "dbname": "testdb",
+                "user": "testuser",
+                "password": "testpass",
+                "sslmode": None,
+            },
         )
         mock_log_event.assert_any_call(
             level="INFO", event="db_connection_success", db_name="testdb", conv_id=None
@@ -59,6 +68,7 @@ class TestGetConnection:
     ):
         """Test connection with SSL mode."""
         mock_get_db_config.return_value = {
+            "type": "standard",
             "host": "localhost",
             "port": 5432,
             "dbname": "testdb",
@@ -89,6 +99,7 @@ class TestGetConnection:
     ):
         """Test connection failure due to OperationalError."""
         mock_get_db_config.return_value = {
+            "type": "standard",
             "host": "localhost",
             "port": 5432,
             "dbname": "testdb",

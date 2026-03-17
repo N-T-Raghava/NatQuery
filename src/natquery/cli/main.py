@@ -12,7 +12,9 @@ def main():
         cmd = sys.argv[1]
 
         if cmd == "connect":
-            connect_command()
+            # Pass DSN if provided: natquery connect <dsn>
+            dsn = sys.argv[2] if len(sys.argv) > 2 else None
+            connect_command(dsn)
             return
 
         elif cmd == "reset":
