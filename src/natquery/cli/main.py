@@ -35,6 +35,7 @@ def main():
         print("NatQuery not configured.")
         print("Run: natquery connect")
         return
-
+    
+    print("\n[bold cyan]Starting NatQuery...[/bold cyan]\n")
     initialize_workspace()
     start_shell()
