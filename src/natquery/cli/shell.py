@@ -8,28 +8,31 @@ from natquery.llm.client import generate_sql
 
 console = Console()
 
+
 def show_banner():
-    banner = Text("""
+    banner = Text(
+        """
 ███╗   ██╗ █████╗ ████████╗ ██████╗ ██╗   ██╗███████╗██████╗ ██╗   ██╗
 ████╗  ██║██╔══██╗╚══██╔══╝██╔═══██╗██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝
 ██╔██╗ ██║███████║   ██║   ██║   ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝ 
 ██║╚██╗██║██╔══██║   ██║   ██║▄▄ ██║██║   ██║██╔══╝  ██╔══██╗  ╚██╔╝  
 ██║ ╚████║██║  ██║   ██║   ╚██████╔╝╚██████╔╝███████╗██║  ██║   ██║   
 ╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝    ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝   
-""", style="bold cyan")
+""",
+        style="bold cyan",
+    )
 
     print(Panel(banner, title="⚡ NatQuery CLI", border_style="green"))
-from natquery.orchestration.pipeline import run_query
 
 
 def start_shell():
-    show_banner()   # 👈 ADD THIS
+    show_banner()  # 👈 ADD THIS
     show_sql = False
     # print("[bold green]NatQuery ready.[/bold green] Type 'exit' to quit.\n")
     # print("NatQuery CLI. Type 'exit' to quit.")
     print("[bold green]NatQuery ready.[/bold green]")
     print("[dim]Commands: /sql (toggle SQL), exit[/dim]\n")
-    
+
     while True:
         query = console.input("[bold blue]> [/bold blue]")
 
@@ -53,7 +56,9 @@ def start_shell():
 
             # ✅ Step 3: Display nicely
             if show_sql:
-                print(Panel(generated_sql, title="🧠 Generated SQL", border_style="cyan"))
+                print(
+                    Panel(generated_sql, title="🧠 Generated SQL", border_style="cyan")
+                )
 
             print(Panel(str(result), title="📊 Result", border_style="green"))
 
