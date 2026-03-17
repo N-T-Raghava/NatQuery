@@ -44,16 +44,18 @@ class TestStartShell:
     @patch("natquery.cli.shell.show_banner")
     @patch("rich.console.Console.input")
     @patch("natquery.cli.shell.run_query")
+    @patch("natquery.cli.shell.generate_sql")
     @patch("natquery.cli.shell.print")
     def test_shell_handles_query_errors(
-        self, mock_print, mock_run_query, mock_input, mock_banner
+        self, mock_print, mock_generate_sql, mock_run_query, mock_input, mock_banner
     ):
         """Test that shell handles query errors gracefully."""
         mock_input.side_effect = ["bad query", "exit"]
+        mock_generate_sql.return_value = "SELECT * FROM bad"
         mock_run_query.side_effect = Exception("SQL Error")
 
-        # Should not raise, errors are caught
+        # Should not raise, errors are caught by try/except
         start_shell()
 
-        # Verify error was handled (run_query was called despite error)
+        # Verify run_query was called and error was handled
         assert mock_run_query.call_count == 1
