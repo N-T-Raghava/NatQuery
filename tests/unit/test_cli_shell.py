@@ -1,4 +1,4 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from natquery.cli.shell import start_shell
 
 
@@ -14,9 +14,9 @@ class TestStartShell:
     ):
         """Test that shell exits on 'quit' or 'exit' without calling run_query."""
         mock_input.return_value = "exit"
-        
+
         start_shell()
-        
+
         mock_banner.assert_called_once()
         mock_run_query.assert_not_called()
 
@@ -33,9 +33,9 @@ class TestStartShell:
         mock_input.side_effect = ["show users", "exit"]
         mock_run_query.return_value = [{"id": 1, "name": "Alice"}]
         mock_generate_sql.return_value = "SELECT * FROM users"
-        
+
         start_shell()
-        
+
         # Verify the query was processed
         assert mock_run_query.call_count == 1
         mock_run_query.assert_called_with("show users")
@@ -51,9 +51,9 @@ class TestStartShell:
         """Test that shell handles query errors gracefully."""
         mock_input.side_effect = ["bad query", "exit"]
         mock_run_query.side_effect = Exception("SQL Error")
-        
+
         # Should not raise, errors are caught
         start_shell()
-        
+
         # Verify error was handled (run_query was called despite error)
         assert mock_run_query.call_count == 1
