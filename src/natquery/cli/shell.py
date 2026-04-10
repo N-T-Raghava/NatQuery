@@ -1,10 +1,10 @@
-# src/natquery/cli/shell.py
 from rich import print
 from rich.panel import Panel
 from rich.text import Text
 from rich.console import Console
 from natquery.orchestration.pipeline import run_query
 from natquery.llm.client import generate_sql
+from natquery.cli.formatter import print_table
 
 console = Console()
 
@@ -26,7 +26,7 @@ def show_banner():
 
 
 def start_shell():
-    show_banner()  # 👈 ADD THIS
+    show_banner()
     show_sql = False
     # print("[bold green]NatQuery ready.[/bold green] Type 'exit' to quit.\n")
     # print("NatQuery CLI. Type 'exit' to quit.")
@@ -47,20 +47,18 @@ def start_shell():
             print(f"[yellow]Show SQL:[/yellow] {status}")
             continue
 
+        if not query.strip():
+            continue
+
         try:
-            # ✅ Step 1: Generate SQL from LLM
             generated_sql = generate_sql(query)
 
-            # ✅ Step 2: Execute using pipeline
             result = run_query(query)
 
-            # ✅ Step 3: Display nicely
             if show_sql:
-                print(
-                    Panel(generated_sql, title="🧠 Generated SQL", border_style="cyan")
-                )
+                print(Panel(generated_sql, title="Generated SQL", border_style="cyan"))
 
-            print(Panel(str(result), title="📊 Result", border_style="green"))
+            print_table(result)
 
         except Exception as e:
             print(f"[bold red]Error:[/bold red] {e}")

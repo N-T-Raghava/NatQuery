@@ -1,8 +1,10 @@
 import sys
+from rich import print
 from natquery.cli.commands import connect_command, reset_command, show_config_command
 from natquery.cli.shell import start_shell
 from natquery.config.settings import Settings
 from natquery.orchestration.workspace import initialize_workspace
+
 
 
 def main():

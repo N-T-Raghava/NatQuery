@@ -1,10 +1,17 @@
 def extract_schema(conn):
     """
-    Extract table names and column names from public schema.
+    Extract full schema:
+    - tables
+    - columns + types
+    - primary keys
+    - foreign keys
     """
 
     cursor = conn.cursor()
 
+    schema = {"tables": {}}
+
+    # Get tables
     cursor.execute(
         """
         SELECT table_name
@@ -13,21 +20,61 @@ def extract_schema(conn):
     """
     )
 
-    tables = cursor.fetchall()
+    tables = [row[0] for row in cursor.fetchall()]
 
-    schema = {}
+    for table in tables:
+        schema["tables"][table] = {"columns": {}, "primary_key": [], "foreign_keys": []}
 
-    for (table_name,) in tables:
+        # Columns and types
         cursor.execute(
             """
-            SELECT column_name
+            SELECT column_name, data_type
             FROM information_schema.columns
-            WHERE table_name = %s
+            WHERE table_name = %s;
         """,
-            (table_name,),
+            (table,),
         )
 
-        columns = cursor.fetchall()
-        schema[table_name] = [col[0] for col in columns]
+        for col, dtype in cursor.fetchall():
+            schema["tables"][table]["columns"][col] = dtype
 
+        # Primary keys
+        cursor.execute(
+            """
+            SELECT kcu.column_name
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+            WHERE tc.table_name = %s
+              AND tc.constraint_type = 'PRIMARY KEY';
+        """,
+            (table,),
+        )
+
+        schema["tables"][table]["primary_key"] = [row[0] for row in cursor.fetchall()]
+
+        # Foreign keys
+        cursor.execute(
+            """
+            SELECT
+                kcu.column_name,
+                ccu.table_name AS foreign_table,
+                ccu.column_name AS foreign_column
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+            JOIN information_schema.constraint_column_usage ccu
+              ON ccu.constraint_name = tc.constraint_name
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND tc.table_name = %s;
+        """,
+            (table,),
+        )
+
+        for col, ref_table, ref_col in cursor.fetchall():
+            schema["tables"][table]["foreign_keys"].append(
+                {"column": col, "references": {"table": ref_table, "column": ref_col}}
+            )
+
+    cursor.close()
     return schema

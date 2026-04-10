@@ -1,7 +1,9 @@
-from pathlib import Path
-import json
 from groq import Groq
 from natquery.config.settings import Settings
+from natquery.schema.formatter import format_schema
+from natquery.prompt.builder import build_prompt
+from pathlib import Path
+import json
 
 
 def generate_sql(user_query: str) -> str:
@@ -9,7 +11,6 @@ def generate_sql(user_query: str) -> str:
     llm_config = Settings.get_llm_config()
     client = Groq(api_key=llm_config["api_key"])
 
-    # Load schema
     db_config = Settings.get_db_config()
     db_name = db_config["dbname"]
 
@@ -21,26 +22,12 @@ def generate_sql(user_query: str) -> str:
     else:
         schema = {}
 
-    schema_text = ""
-    for table, columns in schema.items():
-        schema_text += f"\nTable: {table}\nColumns: {', '.join(columns)}\n"
-
-    system_prompt = f"""
-    You are a PostgreSQL expert.
-
-    Database Schema:
-    {schema_text}
-
-    Convert user request into valid PostgreSQL SQL.
-    Only return SQL.
-    """
+    schema_text = format_schema(schema)
+    messages = build_prompt(user_query, schema_text)
 
     response = client.chat.completions.create(
         model=llm_config["model"],
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_query},
-        ],
+        messages=messages,
         temperature=0.0,
     )
 

@@ -23,6 +23,7 @@ def initialize_workspace():
 
     # Skip if already extracted
     if schema_file.exists():
+        print("Schema already exists. Skipping extraction.")
         return
 
     conn = get_connection()
