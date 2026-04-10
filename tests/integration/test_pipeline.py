@@ -113,6 +113,7 @@ class TestRunQuery:
         assert call_kwargs["rows_returned"] == 1
         assert call_kwargs["execution_time_ms"] == pytest.approx(150.0, abs=1.0)
 
+    @patch("natquery.orchestration.pipeline.handle_query_error")
     @patch("natquery.orchestration.pipeline.NatQueryLogger.log_event")
     @patch("natquery.orchestration.pipeline.execute_sql")
     @patch("natquery.orchestration.pipeline.generate_sql")
@@ -125,12 +126,14 @@ class TestRunQuery:
         mock_generate_sql,
         mock_execute_sql,
         mock_log_event,
+        mock_handle_query_error,
     ):
         """Test that errors during execution are logged and re-raised."""
         mock_generate_conv_id.return_value = "conv-123"
         mock_get_db_config.return_value = {"dbname": "testdb"}
-        mock_generate_sql.return_value = "INVALID SQL"
+        mock_generate_sql.return_value = "SELECT * FROM users"
         mock_execute_sql.side_effect = Exception("SQL syntax error")
+        mock_handle_query_error.side_effect = Exception("SQL syntax error")
 
         with pytest.raises(Exception, match="SQL syntax error"):
             run_query("bad query")
