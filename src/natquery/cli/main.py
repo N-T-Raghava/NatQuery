@@ -6,7 +6,6 @@ from natquery.config.settings import Settings
 from natquery.orchestration.workspace import initialize_workspace
 
 
-
 def main():
 
     if len(sys.argv) > 1:
