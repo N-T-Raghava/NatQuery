@@ -31,7 +31,11 @@ class TestStartShell:
         """Test that shell processes a query and calls run_query."""
         # Set up: First input is a query, second input is exit
         mock_input.side_effect = ["show users", "exit"]
-        mock_run_query.return_value = [{"id": 1, "name": "Alice"}]
+        mock_run_query.return_value = {
+            "result": [{"id": 1, "name": "Alice"}],
+            "summary": {"execution_time_ms": 1.5, "total_cost": 35.0},
+            "suggestions": [],
+        }
         mock_generate_sql.return_value = "SELECT * FROM users"
 
         start_shell()
@@ -39,7 +43,7 @@ class TestStartShell:
         # Verify the query was processed
         assert mock_run_query.call_count == 1
         mock_run_query.assert_called_with("show users")
-        mock_generate_sql.assert_called_with("show users")
+        # generate_sql is not called when show_sql is False (default)
 
     @patch("natquery.cli.shell.show_banner")
     @patch("rich.console.Console.input")

@@ -1,18 +1,24 @@
-from natquery.config.connection import get_connection, close_connection
+from natquery.config.connection import get_connection, close_connection, get_cursor
 
 
 def execute_sql(sql: str):
     conn = get_connection()
 
     try:
-        cursor = conn.cursor()
+        cursor = get_cursor(conn)
         cursor.execute(sql)
 
         if cursor.description:
-            columns = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
-
-            result = [dict(zip(columns, row)) for row in rows]
+            # RealDictCursor rows are already dict-like, convert to plain dict
+            result = [
+                (
+                    dict(row)
+                    if hasattr(row, "keys")
+                    else dict(zip([desc[0] for desc in cursor.description], row))
+                )
+                for row in rows
+            ]
         else:
             result = []
 

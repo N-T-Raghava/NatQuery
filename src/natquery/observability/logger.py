@@ -1,5 +1,6 @@
 import json
 import uuid
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -67,4 +68,42 @@ class NatQueryLogger:
         }
 
         with open(conv_file, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+
+    @staticmethod
+    def _hash_query(sql: str) -> str:
+        return hashlib.sha256(sql.encode()).hexdigest()[:16]
+
+    @classmethod
+    def log_performance(
+        cls,
+        db_name: str,
+        conv_id: str,
+        sql: str,
+        summary: dict,
+        suggestions: list,
+    ):
+        """
+        Stores structured performance history.
+        """
+
+        perf_dir = cls.BASE_DIR / db_name / "logs"
+        perf_dir.mkdir(parents=True, exist_ok=True)
+
+        perf_file = perf_dir / "performance.jsonl"
+
+        query_hash = cls._hash_query(sql)
+
+        entry = {
+            "timestamp": cls._timestamp(),
+            "conv_id": conv_id,
+            "query_hash": query_hash,
+            "sql": sql,
+            "execution_time_ms": summary.get("execution_time_ms"),
+            "total_cost": summary.get("total_cost"),
+            "planning_time_ms": summary.get("planning_time_ms"),
+            "suggestions": suggestions,
+        }
+
+        with open(perf_file, "a") as f:
             f.write(json.dumps(entry) + "\n")

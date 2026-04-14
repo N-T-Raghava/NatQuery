@@ -7,14 +7,17 @@ class TestExecuteSql:
     """Test execute_sql() function."""
 
     @patch("natquery.execution.engine.close_connection")
+    @patch("natquery.execution.engine.get_cursor")
     @patch("natquery.execution.engine.get_connection")
-    def test_execute_sql_select_query(self, mock_get_connection, mock_close_connection):
+    def test_execute_sql_select_query(
+        self, mock_get_connection, mock_get_cursor, mock_close_connection
+    ):
         """Test execution of SELECT query."""
         mock_conn = MagicMock()
         mock_get_connection.return_value = mock_conn
 
         mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
+        mock_get_cursor.return_value = mock_cursor
 
         # Mock description for SELECT
         mock_cursor.description = [("id",), ("name",)]
@@ -29,14 +32,17 @@ class TestExecuteSql:
         mock_close_connection.assert_called_once_with(mock_conn)
 
     @patch("natquery.execution.engine.close_connection")
+    @patch("natquery.execution.engine.get_cursor")
     @patch("natquery.execution.engine.get_connection")
-    def test_execute_sql_insert_query(self, mock_get_connection, mock_close_connection):
+    def test_execute_sql_insert_query(
+        self, mock_get_connection, mock_get_cursor, mock_close_connection
+    ):
         """Test execution of INSERT query (no result)."""
         mock_conn = MagicMock()
         mock_get_connection.return_value = mock_conn
 
         mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
+        mock_get_cursor.return_value = mock_cursor
 
         # Mock no description for INSERT
         mock_cursor.description = None
@@ -51,16 +57,17 @@ class TestExecuteSql:
         mock_close_connection.assert_called_once_with(mock_conn)
 
     @patch("natquery.execution.engine.close_connection")
+    @patch("natquery.execution.engine.get_cursor")
     @patch("natquery.execution.engine.get_connection")
     def test_execute_sql_exception_handling(
-        self, mock_get_connection, mock_close_connection
+        self, mock_get_connection, mock_get_cursor, mock_close_connection
     ):
         """Test that connection is closed even if exception occurs."""
         mock_conn = MagicMock()
         mock_get_connection.return_value = mock_conn
 
         mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
+        mock_get_cursor.return_value = mock_cursor
 
         mock_cursor.execute.side_effect = Exception("SQL Error")
 
@@ -71,14 +78,17 @@ class TestExecuteSql:
         mock_conn.commit.assert_not_called()  # Should not commit on error
 
     @patch("natquery.execution.engine.close_connection")
+    @patch("natquery.execution.engine.get_cursor")
     @patch("natquery.execution.engine.get_connection")
-    def test_execute_sql_empty_result(self, mock_get_connection, mock_close_connection):
+    def test_execute_sql_empty_result(
+        self, mock_get_connection, mock_get_cursor, mock_close_connection
+    ):
         """Test SELECT query with no results."""
         mock_conn = MagicMock()
         mock_get_connection.return_value = mock_conn
 
         mock_cursor = MagicMock()
-        mock_conn.cursor.return_value = mock_cursor
+        mock_get_cursor.return_value = mock_cursor
 
         mock_cursor.description = [("id",)]
         mock_cursor.fetchall.return_value = []

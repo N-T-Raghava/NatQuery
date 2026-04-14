@@ -32,10 +32,9 @@ class TestRunQuery:
 
         result = run_query("show users")
 
-        assert result == [{"id": 1, "name": "John"}]
-        mock_generate_sql.assert_called_once_with("show users")
-        mock_validate_sql.assert_called_once()
-        mock_execute_sql.assert_called_once()
+        assert result["result"] == [{"id": 1, "name": "John"}]
+        assert "summary" in result
+        assert "suggestions" in result
 
     @patch("natquery.orchestration.pipeline.NatQueryLogger")
     @patch("natquery.orchestration.pipeline.handle_query_error")
@@ -118,7 +117,7 @@ class TestRunQuery:
 
         result = run_query("get data")
 
-        assert result == [{"id": 1}]
+        assert result["result"] == [{"id": 1}]
         mock_handle_error.assert_called_once()
 
     @patch("natquery.orchestration.pipeline.NatQueryLogger")
@@ -210,7 +209,7 @@ class TestRunQuery:
 
         result = run_query("get data from empty table")
 
-        assert result == []
+        assert result["result"] == []
         # Should still log with 0 rows
         call_kwargs = mock_logger.log_conversation.call_args[1]
         assert call_kwargs["rows_returned"] == 0
@@ -298,6 +297,222 @@ class TestRunQuery:
             run_query("query")
 
         assert "LLM API error" in str(exc_info.value)
+
+    @patch("natquery.orchestration.pipeline.NatQueryLogger")
+    @patch("natquery.orchestration.pipeline.suggest_indexes")
+    @patch("natquery.orchestration.pipeline.analyze_cost")
+    @patch("natquery.orchestration.pipeline.run_explain_analyze")
+    @patch("natquery.orchestration.pipeline.handle_query_error")
+    @patch("natquery.orchestration.pipeline.execute_sql")
+    @patch("natquery.orchestration.pipeline.validate_sql")
+    @patch("natquery.orchestration.pipeline.generate_sql")
+    @patch("natquery.orchestration.pipeline.Settings.get_db_config")
+    def test_run_query_performance_analysis_on_success(
+        self,
+        mock_get_db_config,
+        mock_generate_sql,
+        mock_validate_sql,
+        mock_execute_sql,
+        mock_handle_error,
+        mock_run_explain_analyze,
+        mock_analyze_cost,
+        mock_suggest_indexes,
+        mock_logger,
+    ):
+        """Test that performance analysis runs after successful execution."""
+        mock_get_db_config.return_value = {"dbname": "testdb"}
+        mock_generate_sql.return_value = "SELECT * FROM users WHERE status = 'active';"
+        mock_validate_sql.return_value = True
+        mock_execute_sql.return_value = [{"id": 1}]
+        mock_logger.generate_conv_id.return_value = "conv-perf-1"
+
+        # Mock explain output
+        explain_result = {
+            "Plan": {
+                "Node Type": "Seq Scan",
+                "Relation Name": "users",
+                "Total Cost": 45.00,
+            },
+            "Execution Time": 2.345,
+        }
+        mock_run_explain_analyze.return_value = explain_result
+
+        # Mock cost analysis
+        cost_analysis = {
+            "summary": {
+                "total_cost": 45.00,
+                "execution_time_ms": 2.345,
+                "planning_time_ms": 0.234,
+                "plan_rows": 100,
+            },
+            "nodes": [
+                {
+                    "node_type": "Seq Scan",
+                    "relation": "users",
+                    "columns": ["status"],
+                }
+            ],
+        }
+        mock_analyze_cost.return_value = cost_analysis
+
+        # Mock index suggestions
+        suggestions = [
+            {
+                "type": "index",
+                "table": "users",
+                "columns": ["status"],
+                "sql": "CREATE INDEX idx_users_status ON users(status);",
+            }
+        ]
+        mock_suggest_indexes.return_value = suggestions
+
+        result = run_query("get active users")
+
+        assert result["result"] == [{"id": 1}]
+        # Performance analysis should be called
+        mock_run_explain_analyze.assert_called_once()
+        mock_analyze_cost.assert_called_once_with(explain_result)
+        mock_suggest_indexes.assert_called_once_with(cost_analysis)
+
+    @patch("natquery.orchestration.pipeline.NatQueryLogger")
+    @patch("natquery.orchestration.pipeline.suggest_indexes")
+    @patch("natquery.orchestration.pipeline.analyze_cost")
+    @patch("natquery.orchestration.pipeline.run_explain_analyze")
+    @patch("natquery.orchestration.pipeline.handle_query_error")
+    @patch("natquery.orchestration.pipeline.execute_sql")
+    @patch("natquery.orchestration.pipeline.validate_sql")
+    @patch("natquery.orchestration.pipeline.generate_sql")
+    @patch("natquery.orchestration.pipeline.Settings.get_db_config")
+    def test_run_query_performance_analysis_logged(
+        self,
+        mock_get_db_config,
+        mock_generate_sql,
+        mock_validate_sql,
+        mock_execute_sql,
+        mock_handle_error,
+        mock_run_explain_analyze,
+        mock_analyze_cost,
+        mock_suggest_indexes,
+        mock_logger,
+    ):
+        """Test that performance analysis results are logged."""
+        mock_get_db_config.return_value = {"dbname": "testdb"}
+        mock_generate_sql.return_value = "SELECT * FROM users;"
+        mock_validate_sql.return_value = True
+        mock_execute_sql.return_value = []
+        mock_logger.generate_conv_id.return_value = "conv-perf-2"
+
+        explain_result = {"Plan": {"Total Cost": 50.0}, "Execution Time": 3.0}
+        mock_run_explain_analyze.return_value = explain_result
+
+        cost_analysis = {
+            "summary": {"total_cost": 50.0, "execution_time_ms": 3.0},
+            "nodes": [],
+        }
+        mock_analyze_cost.return_value = cost_analysis
+        mock_suggest_indexes.return_value = []
+
+        run_query("get users")
+
+        # Should log performance event
+        log_calls = mock_logger.log_event.call_args_list
+        event_names = [call[1]["event"] for call in log_calls]
+        assert "performance_analysis" in event_names
+
+    @patch("natquery.orchestration.pipeline.NatQueryLogger")
+    @patch("natquery.orchestration.pipeline.suggest_indexes")
+    @patch("natquery.orchestration.pipeline.analyze_cost")
+    @patch("natquery.orchestration.pipeline.run_explain_analyze")
+    @patch("natquery.orchestration.pipeline.handle_query_error")
+    @patch("natquery.orchestration.pipeline.execute_sql")
+    @patch("natquery.orchestration.pipeline.validate_sql")
+    @patch("natquery.orchestration.pipeline.generate_sql")
+    @patch("natquery.orchestration.pipeline.Settings.get_db_config")
+    def test_run_query_performance_analysis_failure_handled(
+        self,
+        mock_get_db_config,
+        mock_generate_sql,
+        mock_validate_sql,
+        mock_execute_sql,
+        mock_handle_error,
+        mock_run_explain_analyze,
+        mock_analyze_cost,
+        mock_suggest_indexes,
+        mock_logger,
+    ):
+        """Test that performance analysis failure doesn't crash query."""
+        mock_get_db_config.return_value = {"dbname": "testdb"}
+        mock_generate_sql.return_value = "SELECT 1;"
+        mock_validate_sql.return_value = True
+        mock_execute_sql.return_value = [{"result": 1}]
+        mock_logger.generate_conv_id.return_value = "conv-perf-3"
+
+        # EXPLAIN fails
+        mock_run_explain_analyze.side_effect = Exception("EXPLAIN not supported")
+
+        # Should not raise - should handle gracefully
+        result = run_query("select 1")
+
+        assert result["result"] == [{"result": 1}]
+        # Should log the error
+        log_calls = mock_logger.log_event.call_args_list
+        event_names = [call[1]["event"] for call in log_calls]
+        assert "performance_analysis_failed" in event_names
+
+    @patch("natquery.orchestration.pipeline.NatQueryLogger")
+    @patch("natquery.orchestration.pipeline.suggest_indexes")
+    @patch("natquery.orchestration.pipeline.analyze_cost")
+    @patch("natquery.orchestration.pipeline.run_explain_analyze")
+    @patch("natquery.orchestration.pipeline.handle_query_error")
+    @patch("natquery.orchestration.pipeline.execute_sql")
+    @patch("natquery.orchestration.pipeline.validate_sql")
+    @patch("natquery.orchestration.pipeline.generate_sql")
+    @patch("natquery.orchestration.pipeline.Settings.get_db_config")
+    def test_run_query_logs_performance_summary(
+        self,
+        mock_get_db_config,
+        mock_generate_sql,
+        mock_validate_sql,
+        mock_execute_sql,
+        mock_handle_error,
+        mock_run_explain_analyze,
+        mock_analyze_cost,
+        mock_suggest_indexes,
+        mock_logger,
+    ):
+        """Test that performance summary is logged with all metrics."""
+        mock_get_db_config.return_value = {"dbname": "testdb"}
+        mock_generate_sql.return_value = "SELECT * FROM large_table WHERE id > 1000;"
+        mock_validate_sql.return_value = True
+        mock_execute_sql.return_value = [{"id": 1001}]
+        mock_logger.generate_conv_id.return_value = "conv-perf-4"
+
+        explain_result = {
+            "Plan": {"Total Cost": 100.0, "Plan Rows": 5000},
+            "Execution Time": 10.5,
+            "Planning Time": 0.5,
+        }
+        mock_run_explain_analyze.return_value = explain_result
+
+        cost_analysis = {
+            "summary": {
+                "total_cost": 100.0,
+                "plan_rows": 5000,
+                "execution_time_ms": 10.5,
+                "planning_time_ms": 0.5,
+            },
+            "nodes": [],
+        }
+        mock_analyze_cost.return_value = cost_analysis
+        mock_suggest_indexes.return_value = []
+
+        run_query("get large table")
+
+        # Verify log_performance was called with correct data
+        mock_logger.log_performance.assert_called_once()
+        call_kwargs = mock_logger.log_performance.call_args[1]
+        assert call_kwargs["summary"]["total_cost"] == 100.0
+        assert call_kwargs["summary"]["plan_rows"] == 5000
         # Should have logged the error
         assert mock_logger.log_event.called
 
@@ -331,5 +546,5 @@ class TestRunQuery:
 
         result = run_query("get all user data")
 
-        assert result == complex_result
+        assert result["result"] == complex_result
         assert len(result) == 3

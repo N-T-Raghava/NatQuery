@@ -5,6 +5,9 @@ from natquery.config.settings import Settings
 from natquery.security.validator import validate_sql
 from natquery.observability.logger import NatQueryLogger
 from natquery.orchestration.error_handler import handle_query_error
+from natquery.execution.explain import run_explain_analyze
+from natquery.observability.cost_analyzer import analyze_cost
+from natquery.observability.index_recommender import suggest_indexes
 
 
 def run_query(user_query: str):
@@ -101,7 +104,20 @@ def run_query(user_query: str):
         )
 
         # Retry execution once corrected
-        result = execute_sql(sql)
+        try:
+            result = execute_sql(sql)
+        except Exception as retry_error:
+            NatQueryLogger.log_event(
+                level="ERROR",
+                event="db_execution_failed_after_correction",
+                db_name=db_name,
+                conv_id=conv_id,
+                details={
+                    "error": str(retry_error),
+                    "corrected_sql": sql,
+                },
+            )
+            raise retry_error
 
     # -------- SUCCESS LOGGING --------
     execution_time_ms = (time.time() - start_time) * 1000
@@ -127,4 +143,50 @@ def run_query(user_query: str):
         execution_time_ms=execution_time_ms,
     )
 
-    return result
+    # -------- PERFORMANCE ANALYSIS --------
+    summary = None
+    suggestions = None
+
+    try:
+        plan_json = run_explain_analyze(sql)
+
+        analysis = analyze_cost(plan_json)
+        suggestions = suggest_indexes(analysis)
+
+        summary = analysis["summary"]
+
+        # Store performance history
+        NatQueryLogger.log_performance(
+            db_name=db_name,
+            conv_id=conv_id,
+            sql=sql,
+            summary=summary,
+            suggestions=suggestions,
+        )
+
+        # Existing log
+        NatQueryLogger.log_event(
+            level="INFO",
+            event="performance_analysis",
+            db_name=db_name,
+            conv_id=conv_id,
+            details={
+                "summary": summary,
+                "suggestions": suggestions,
+            },
+        )
+
+    except Exception as e:
+        NatQueryLogger.log_event(
+            level="ERROR",
+            event="performance_analysis_failed",
+            db_name=db_name,
+            conv_id=conv_id,
+            details={"error": str(e)},
+        )
+
+    return {
+        "result": result,
+        "summary": summary,
+        "suggestions": suggestions,
+    }

@@ -114,7 +114,13 @@ def print_table(
 
         console.print(table)
 
-        # Pagination pause
+        # Pagination pause (non-blocking for automation)
         if page < total_pages - 1:
-            console.print("[dim]Press Enter for next page...[/dim]")
-            input()
+            try:
+                console.print(
+                    "[dim]Press Enter for next page... (or Ctrl+C to stop)[/dim]"
+                )
+                input()
+            except (EOFError, KeyboardInterrupt):
+                console.print("[yellow]Pagination stopped.[/yellow]")
+                break

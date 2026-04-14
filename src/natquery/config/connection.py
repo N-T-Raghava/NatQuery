@@ -98,7 +98,11 @@ def close_connection(conn: PGConnection) -> None:
     """
     if conn:
         try:
-            db_name = conn.get_dsn_parameters().get("dbname")
+            # Safely extract db_name; use fallback if connection is partially closed
+            try:
+                db_name = conn.get_dsn_parameters().get("dbname")
+            except (AttributeError, psycopg2.Error):
+                db_name = "unknown_db"
 
             conn.close()
 
