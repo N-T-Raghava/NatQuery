@@ -1,24 +1,58 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "natquery"
-version = "0.0.1"
+version = "1.0.0"
+description = "Interact with PostgreSQL databases using natural language via a secure, performance-aware CLI"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Tanmai Raghava", email = "tanmairaghava@kgpian.iitkgp.ac.in"},
+    {name = "Krishna Chaitanya", email = "krish89@kgpian.iitkgp.ac.in"},
+    {name = "Thania Joshi", email = "thaniavjoshi@kgpian.iitkgp.ac.in"},
+    {name = "Lokeswara Reddy", email = "lokeswarareddy2006@gmail.com"},
+    {name = "Manasa Vankam", email = "vankammanasa45@gmail.com"}
+]
+keywords = ["nlp", "database", "postgres", "natural-language", "cli", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Database Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Utilities",
+]
 
 dependencies = [
-    "psycopg2-binary",
-    "groq",
-    "rich"
+    "psycopg2-binary>=2.9.0",
+    "groq>=0.4.0",
+    "rich>=13.0.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/N-T-Raghava/NatQuery"
+Documentation = "https://github.com/N-T-Raghava/NatQuery#readme"
+Repository = "https://github.com/N-T-Raghava/NatQuery"
+Issues = "https://github.com/N-T-Raghava/NatQuery/issues"
 
 [project.optional-dependencies]
 dev = [
-    "pytest",
-    "pytest-cov",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
     "black==25.1.0",
-    "ruff==0.15.6"
+    "ruff==0.15.6",
+    "build>=1.0.0",
+    "twine>=4.0.0"
 ]
 
 [tool.setuptools.packages.find]
