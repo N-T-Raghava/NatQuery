@@ -1,4 +1,11 @@
 # NatQuery
+
+[![PyPI Version](https://img.shields.io/pypi/v/natquery)](https://pypi.org/project/natquery/)
+[![codecov](https://codecov.io/gh/N-T-Raghava/natquery/graph/badge.svg?token=KZIEXD9ALC)](https://codecov.io/gh/N-T-Raghava/natquery)
+[![Type Checked](https://img.shields.io/badge/mypy-checked-blue)](https://github.com/python/mypy)
+[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000)](https://github.com/psf/black)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]((https://img.shields.io/github/license/mashape/apistatus.svg))
+
 natquery is a Python package that enables users to interact with relational databases using natural language via a secure, performance-aware command-line interface along with database driven machine learning analytics.
 
 ```
