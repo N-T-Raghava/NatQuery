@@ -166,6 +166,9 @@ def select_database_command():
             if item.is_dir() and (item / "config.json").exists():
                 databases.append(item.name)
 
+    # Sort for consistent ordering
+    databases.sort()
+
     if not databases:
         print("No configured databases found.")
         print("Run: natquery connect")
