@@ -33,7 +33,7 @@ natquery/
 │       # =========================
 │       ├── config/
 │       │   ├── __init__.py
-│       │   ├── settings.py          # API keys, DB config
+│       │   ├── settings.py          # API keys and DB config
 │       │   ├── connection.py        # PostgreSQL connection manager
 │
 │       # =========================
