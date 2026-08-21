@@ -30,7 +30,11 @@ def format_schema(schema: dict) -> str:
             else:
                 col_lines.append(f"  {col_name} {col_type}")
 
-        table_block = f"TABLE {table_name} (\n" + ",\n".join(col_lines) + "\n)"
+        row_count = table.get("row_count")
+        row_count_label = f" [ROW COUNT: {row_count}]" if row_count is not None else ""
+        table_block = (
+            f"TABLE {table_name}{row_count_label} (\n" + ",\n".join(col_lines) + "\n)"
+        )
         lines.append(table_block)
 
     # Relationships (FKs)

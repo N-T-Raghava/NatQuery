@@ -72,31 +72,81 @@ def check_schema(dsn: str, timeout: int) -> list[str]:
     return sorted(REQUIRED_TABLES - present)
 
 
+def extract_schema(connection) -> dict[str, Any]:
+    """Extract tables, columns, keys, relationships, and exact row counts."""
+    schema: dict[str, Any] = {"tables": {}}
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
+            "ORDER BY table_name"
+        )
+        table_names = [row[0] for row in cursor.fetchall()]
+
+        for table_name in table_names:
+            cursor.execute(
+                "SELECT column_name, data_type "
+                "FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = %s "
+                "ORDER BY ordinal_position",
+                (table_name,),
+            )
+            columns = {column: data_type for column, data_type in cursor.fetchall()}
+
+            cursor.execute(
+                "SELECT kcu.column_name "
+                "FROM information_schema.table_constraints tc "
+                "JOIN information_schema.key_column_usage kcu "
+                "ON tc.constraint_name = kcu.constraint_name "
+                "AND tc.table_schema = kcu.table_schema "
+                "WHERE tc.table_schema = 'public' AND tc.table_name = %s "
+                "AND tc.constraint_type = 'PRIMARY KEY' "
+                "ORDER BY kcu.ordinal_position",
+                (table_name,),
+            )
+            primary_key = [row[0] for row in cursor.fetchall()]
+
+            cursor.execute(
+                "SELECT kcu.column_name, ccu.table_name, ccu.column_name "
+                "FROM information_schema.table_constraints tc "
+                "JOIN information_schema.key_column_usage kcu "
+                "ON tc.constraint_name = kcu.constraint_name "
+                "AND tc.table_schema = kcu.table_schema "
+                "JOIN information_schema.constraint_column_usage ccu "
+                "ON tc.constraint_name = ccu.constraint_name "
+                "AND tc.table_schema = ccu.table_schema "
+                "WHERE tc.table_schema = 'public' AND tc.table_name = %s "
+                "AND tc.constraint_type = 'FOREIGN KEY' "
+                "ORDER BY kcu.ordinal_position",
+                (table_name,),
+            )
+            foreign_keys = [
+                {
+                    "column": column,
+                    "references": {"table": foreign_table, "column": foreign_column},
+                }
+                for column, foreign_table, foreign_column in cursor.fetchall()
+            ]
+
+            quoted_table = '"' + table_name.replace('"', '""') + '"'
+            cursor.execute(f"SELECT COUNT(*) FROM {quoted_table}")
+            row_count = cursor.fetchone()[0]
+
+            schema["tables"][table_name] = {
+                "columns": columns,
+                "primary_key": primary_key,
+                "foreign_keys": foreign_keys,
+                "row_count": row_count,
+            }
+    return schema
+
+
 def prepare_natquery_schema(dsn: str, timeout: int) -> None:
     """Point NatQuery at this DSN and create its schema cache from PostgreSQL."""
     parsed = urlparse(dsn)
     database_name = parsed.path.lstrip("/") or "benchmark"
     with connect(dsn, timeout) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = 'public' ORDER BY table_name"
-            )
-            table_names = [row[0] for row in cursor.fetchall()]
-            schema = {"tables": {}}
-            for table_name in table_names:
-                cursor.execute(
-                    "SELECT column_name, data_type FROM information_schema.columns "
-                    "WHERE table_schema = 'public' AND table_name = %s "
-                    "ORDER BY ordinal_position",
-                    (table_name,),
-                )
-                columns = {row[0]: row[1] for row in cursor.fetchall()}
-                schema["tables"][table_name] = {
-                    "columns": columns,
-                    "primary_key": [],
-                    "foreign_keys": [],
-                }
+        schema = extract_schema(connection)
     schema_path = Path.home() / ".natquery" / database_name / "schema.json"
     schema_path.parent.mkdir(parents=True, exist_ok=True)
     schema_path.write_text(json.dumps(schema, indent=2), encoding="utf-8")
@@ -196,7 +246,6 @@ def run_question(
         "error": None,
     }
     try:
-        prepare_natquery_schema(dsn, timeout)
         sql = generate_sql_with_timeout(question["natural_language"], timeout)
         metrics = analyze_sql(sql)
         record.update(
@@ -304,6 +353,7 @@ def main() -> int:
         print(write_outputs(args.output, records, blocked))
         return 1
     records = []
+    prepare_natquery_schema(args.dsn, args.timeout)
     for number, question in enumerate(questions, 1):
         print(f"[{number:02d}/50] {question['id']}", flush=True)
         records.append(run_question(question, args.dsn, args.repetitions, args.timeout))

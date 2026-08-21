@@ -1,0 +1,416 @@
+benchmark_id,category,error,execution_times_ms,generated_sql,generated_tables,join_count,median_execution_time_ms,pipeline_latency_ms,question,rows_returned,success,table_count
+Q001,optimization,,[296.0651000030339],"SELECT SUM(o.total_amount) AS total_revenue
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.country = 'India'
+  AND EXTRACT(YEAR FROM o.order_date) = 2025;",[],0,296.0651000030339,5739.641499996651,What was the total revenue from customers in India in 2025?,1,True,0
+Q002,aggregation,,[1242.3496000119485],"SELECT
+    c.customer_id,
+    c.name,
+    COUNT(o.order_id) AS order_count
+FROM
+    customers AS c
+LEFT JOIN
+    orders AS o
+    ON c.customer_id = o.customer_id
+GROUP BY
+    c.customer_id,
+    c.name
+ORDER BY
+    order_count DESC;",[],0,1242.3496000119485,5673.703700012993,How many orders did each customer place?,10000,True,0
+Q003,aggregation,,[777.3155000177212],"SELECT c.name AS category_name,
+       SUM(oi.quantity * oi.unit_price) AS revenue
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.order_id
+JOIN products p ON oi.product_id = p.product_id
+JOIN categories c ON p.category_id = c.category_id
+WHERE EXTRACT(YEAR FROM o.order_date) = 2025
+GROUP BY c.category_id, c.name
+ORDER BY revenue DESC
+LIMIT 1;",[],0,777.3155000177212,5313.399499980733,Which product category generated the highest revenue in 2025?,1,True,0
+Q004,distinct,,[355.7442000019364],"SELECT COUNT(DISTINCT c.customer_id) AS customers_in_2025
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+WHERE EXTRACT(YEAR FROM o.order_date) = 2025;",[],0,355.7442000019364,4601.74300003564,How many customers placed at least one order in 2025?,1,True,0
+Q005,aggregation,,[282.90849999757484],"SELECT AVG(o.total_amount) AS average_order_value
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.country = 'India'
+  AND EXTRACT(YEAR FROM o.order_date) = 2025;",[],0,282.90849999757484,4486.951400001999,What is the average order value for orders placed in India in 2025?,1,True,0
+Q006,filtering,,[437.627799983602],"SELECT
+    c.customer_id,
+    c.name,
+    c.country,
+    c.signup_date,
+    c.segment
+FROM
+    customers c
+LEFT JOIN
+    orders o
+    ON c.customer_id = o.customer_id
+WHERE
+    o.order_id IS NULL;",[],0,437.627799983602,5938.637699990068,Which customers have never placed an order?,0,True,0
+Q007,aggregation,,[325.32840000931174],"SELECT
+    ROUND(100.0 * successful_orders / total_orders, 2) AS paid_percentage
+FROM (
+    SELECT COUNT(DISTINCT o.order_id) AS successful_orders
+    FROM orders o
+    JOIN payments p ON p.order_id = o.order_id
+    WHERE p.status = 'Completed'
+) AS s
+CROSS JOIN (
+    SELECT COUNT(*) AS total_orders
+    FROM orders
+) AS t;",[],0,325.32840000931174,6902.770699991379,What percentage of orders were successfully paid?,1,True,0
+Q008,aggregation,,[478.66009996505454],"SELECT s.supplier_id,
+       s.name,
+       SUM(oi.quantity * oi.unit_price) AS total_revenue
+FROM   order_items oi
+JOIN   products p      ON oi.product_id = p.product_id
+JOIN   suppliers s     ON p.supplier_id = s.supplier_id
+GROUP  BY s.supplier_id, s.name
+ORDER  BY total_revenue DESC
+LIMIT 1;",[],0,478.66009996505454,4606.076199968811,Which supplier generated the most sales revenue?,1,True,0
+Q009,time-based,,[302.1203999524005],"SELECT date_trunc('month', p.payment_date) AS month,
+       SUM(p.amount) AS revenue
+FROM payments p
+WHERE p.payment_date >= DATE '2025-01-01'
+  AND p.payment_date < DATE '2026-01-01'
+  AND p.status = 'completed'
+GROUP BY date_trunc('month', p.payment_date)
+ORDER BY month;",[],0,302.1203999524005,4838.2855000090785,What was monthly revenue in 2025?,0,True,0
+Q010,subquery,,[1245.3708999673836],"WITH customer_spending AS (
+  SELECT o.customer_id, SUM(o.total_amount) AS total_spent
+  FROM orders o
+  WHERE o.order_date >= DATE '2025-01-01' AND o.order_date < DATE '2026-01-01'
+  GROUP BY o.customer_id
+),
+avg_spending AS (
+  SELECT AVG(total_spent) AS avg_spent FROM customer_spending
+)
+SELECT c.customer_id, c.name, cs.total_spent
+FROM customer_spending cs
+JOIN customers c ON cs.customer_id = c.customer_id
+CROSS JOIN avg_spending a
+WHERE cs.total_spent > a.avg_spent
+ORDER BY cs.total_spent DESC;",[],0,1245.3708999673836,5922.85690002609,Which customers spent more than the average customer in 2025?,4849,True,0
+Q011,simple retrieval,,[282.1767999557778],"SELECT
+    o.order_id,
+    o.total_amount,
+    o.order_date
+FROM
+    orders AS o
+WHERE
+    o.order_date >= DATE '2025-01-01'
+    AND o.order_date < DATE '2026-01-01'
+ORDER BY
+    o.total_amount DESC
+LIMIT 10;",[],0,282.1767999557778,3971.666599973105,List the top 10 highest-value orders in 2025.,10,True,0
+Q012,filtering,,[257.6878999825567],"SELECT
+    customer_id,
+    name,
+    country
+FROM
+    customers
+WHERE
+    country = 'United States';",[],0,257.6878999825567,4077.057800022885,Which customers are from the United States?,0,True,0
+Q013,simple retrieval,,[262.69650005269796],"SELECT COUNT(*) AS active_product_count
+FROM products
+WHERE active = TRUE;",[],0,262.69650005269796,3961.1477000289597,How many active products exist?,1,True,0
+Q014,aggregation,,[346.54340002452955],"SELECT
+    c.category_id,
+    c.name,
+    AVG(p.price) AS average_price
+FROM
+    products p
+JOIN
+    categories c ON p.category_id = c.category_id
+GROUP BY
+    c.category_id,
+    c.name;",[],0,346.54340002452955,4714.96000001207,What is the average product price by category?,100,True,0
+Q015,groupby,,[269.1653000074439],"SELECT c.category_id, c.name
+FROM categories c
+JOIN products p ON p.category_id = c.category_id
+WHERE p.active = TRUE
+GROUP BY c.category_id, c.name
+HAVING COUNT(*) > 50;",[],0,269.1653000074439,4315.767499967478,Which categories have more than 50 active products?,0,True,0
+Q016,filtering,,[265.85879997583106],"SELECT COUNT(*) AS cancelled_orders
+FROM orders
+WHERE status = 'cancelled';",[],0,265.85879997583106,4081.545199966058,How many orders were cancelled?,1,True,0
+Q017,aggregation,,[304.1817999910563],"SELECT
+    o.status,
+    AVG(o.total_amount) AS average_order_amount
+FROM
+    orders AS o
+GROUP BY
+    o.status;",[],0,304.1817999910563,4401.01000003051,What is the average order amount by status?,4,True,0
+Q018,simple joins,,[264.36329999705777],"SELECT *
+FROM orders
+WHERE customer_id = 42;",[],0,264.36329999705777,4422.219500003848,Show all orders for customer 42.,10,True,0
+Q019,simple joins,,[1466.7323000030592],"SELECT
+    c.customer_id,
+    c.name,
+    SUM(o.total_amount) AS total_revenue
+FROM
+    customers c
+JOIN
+    orders o
+    ON c.customer_id = o.customer_id
+WHERE
+    o.order_date >= DATE '2025-01-01'
+    AND o.order_date < DATE '2026-01-01'
+GROUP BY
+    c.customer_id,
+    c.name;",[],0,1466.7323000030592,5673.15539997071,What is the total revenue for each customer in 2025?,10000,True,0
+Q020,simple joins,,[307.20519996248186],"SELECT
+    method,
+    SUM(amount) AS total_revenue
+FROM
+    payments
+GROUP BY
+    method
+ORDER BY
+    total_revenue DESC;",[],0,307.20519996248186,4236.819799989462,What is the total revenue by payment method?,4,True,0
+Q021,simple joins,,[291.0694999736734],"SELECT DISTINCT p.product_id,
+       p.name,
+       p.category_id,
+       p.supplier_id,
+       p.price,
+       p.active
+FROM   order_items oi
+JOIN   orders o ON oi.order_id = o.order_id
+JOIN   products p ON oi.product_id = p.product_id
+WHERE  o.order_date >= CURRENT_DATE - INTERVAL '30 days';",[],0,291.0694999736734,4500.488699995913,Which products were sold in the last 30 days?,0,True,0
+Q022,simple retrieval,,[536.9080999516882],"SELECT
+    supplier_id,
+    name,
+    country
+FROM
+    suppliers
+WHERE
+    country = 'India';",[],0,536.9080999516882,4769.331099989358,Which suppliers are based in India?,500,True,0
+Q023,simple joins,,[2868.698399979621],"SELECT o.*
+FROM orders AS o
+JOIN shipments AS s
+  ON o.order_id = s.order_id;",[],0,2868.698399979621,8490.081200026907,Which orders have associated shipments?,100000,True,0
+Q024,simple joins,,[527.2721000364982],"SELECT
+    s.supplier_id,
+    s.name,
+    COUNT(p.product_id) AS product_count
+FROM
+    suppliers AS s
+LEFT JOIN
+    products AS p
+    ON p.supplier_id = s.supplier_id
+GROUP BY
+    s.supplier_id,
+    s.name
+ORDER BY
+    product_count DESC;",[],0,527.2721000364982,4988.937100046314,How many products does each supplier provide?,500,True,0
+Q025,multi-table joins,,[413.44969999045134],"SELECT c.name AS category_name,
+       SUM(oi.quantity * oi.unit_price) AS total_value
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.order_id
+JOIN products p ON p.product_id = oi.product_id
+JOIN categories c ON c.category_id = p.category_id
+WHERE o.order_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'
+GROUP BY c.category_id, c.name
+ORDER BY total_value DESC
+LIMIT 1;",[],0,413.44969999045134,5571.162800013553,Which category had the highest total order value in 2025?,1,True,0
+Q026,multi-table joins,,[276.2792000430636],"SELECT w.warehouse_id,
+       w.name,
+       COUNT(*) AS shipments_count
+FROM shipments s
+JOIN warehouses w ON s.warehouse_id = w.warehouse_id
+WHERE s.shipped_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'
+GROUP BY w.warehouse_id, w.name
+ORDER BY shipments_count DESC
+LIMIT 1;",[],0,276.2792000430636,4866.250400024001,Which warehouse shipped the most orders in 2025?,1,True,0
+Q027,multi-table joins,,[991.7939000297338],"SELECT DISTINCT c.customer_id, c.name
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+JOIN shipments s ON o.order_id = s.order_id
+JOIN warehouses w ON s.warehouse_id = w.warehouse_id
+WHERE w.region = 'East';",[],0,991.7939000297338,5322.1505000256,Which customers placed orders that were shipped to the East region?,3900,True,0
+Q028,filtering,,[262.02359999297187],"SELECT COUNT(*) AS successful_card_payments
+FROM payments
+WHERE status = 'successful'
+  AND method = 'card';",[],0,262.02359999297187,3626.697600004263,How many successful payments were made by card?,1,True,0
+Q029,multi-table joins,,[773.1913000461645],"SELECT
+    s.supplier_id,
+    s.name AS supplier_name,
+    SUM(oi.quantity * oi.unit_price) AS sales_total
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.order_id
+JOIN products p ON oi.product_id = p.product_id
+JOIN suppliers s ON p.supplier_id = s.supplier_id
+WHERE o.order_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'
+GROUP BY s.supplier_id, s.name
+ORDER BY sales_total DESC;",[],0,773.1913000461645,6189.587000000756,What was the sales total for each supplier in 2025?,500,True,0
+Q030,multi-table joins,,[1448.293299996294],"SELECT o.*
+FROM orders o
+JOIN payments p ON p.order_id = o.order_id
+JOIN shipments s ON s.order_id = o.order_id
+WHERE p.status = 'pending'
+  AND s.status = 'delivered';",[],0,1448.293299996294,6353.508000029251,List the orders whose payment status is pending and shipment status is delivered.,8334,True,0
+Q031,groupby,,[305.6724999914877],"SELECT
+    c.country,
+    SUM(o.total_amount) AS total_revenue
+FROM
+    orders o
+JOIN
+    customers c ON o.customer_id = c.customer_id
+WHERE
+    o.order_date >= DATE '2025-01-01'
+    AND o.order_date < DATE '2026-01-01'
+GROUP BY
+    c.country;",[],0,305.6724999914877,5092.409299977589,What is the total revenue by country for 2025?,8,True,0
+Q032,groupby,,[321.4109999826178],"SELECT c.segment
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+GROUP BY c.segment
+HAVING AVG(o.total_amount) > 500;",[],0,321.4109999826178,4926.80819996167,Which segments have average order value above 500?,4,True,0
+Q033,groupby,,[628.8939999649301],"SELECT w.region,
+       SUM(oi.quantity) AS total_units
+FROM shipments s
+JOIN warehouses w ON s.warehouse_id = w.warehouse_id
+JOIN orders o ON s.order_id = o.order_id
+JOIN order_items oi ON o.order_id = oi.order_id
+WHERE EXTRACT(YEAR FROM s.shipped_date) = 2025
+GROUP BY w.region
+ORDER BY total_units DESC;",[],0,628.8939999649301,5325.455499987584,Which warehouse regions shipped the most units in 2025?,4,True,0
+Q034,groupby,,[1629.7949000145309],"SELECT
+    c.customer_id,
+    c.name,
+    SUM(o.total_amount) AS total_spent
+FROM
+    customers c
+JOIN
+    orders o ON o.customer_id = c.customer_id
+GROUP BY
+    c.customer_id,
+    c.name
+HAVING
+    SUM(o.total_amount) > 10000;",[],0,1629.7949000145309,6361.7640000302345,"Which customers have spent more than 10,000 total across all orders?",8758,True,0
+Q035,groupby,,[1136.9567000074312],"SELECT
+    p.product_id,
+    p.name,
+    AVG(oi.quantity) AS avg_quantity
+FROM
+    products p
+JOIN
+    order_items oi ON oi.product_id = p.product_id
+GROUP BY
+    p.product_id,
+    p.name
+HAVING
+    AVG(oi.quantity) > 3;",[],0,1136.9567000074312,5656.4631999935955,Which products have average sold quantity above 3?,2000,True,0
+Q036,time-based,,[267.30980002321303],"SELECT COALESCE(SUM(p.amount), 0) AS total_revenue
+FROM payments p
+WHERE p.payment_date >= DATE '2025-01-01'
+  AND p.payment_date < DATE '2025-02-01';",[],0,267.30980002321303,5120.563999982551,What was total revenue in January 2025?,1,True,0
+Q037,time-based,,[303.63179999403656],"SELECT
+    DATE_TRUNC('month', o.order_date) AS month,
+    SUM(o.total_amount) AS revenue
+FROM orders o
+WHERE o.order_date >= DATE '2025-01-01'
+  AND o.order_date < DATE '2026-01-01'
+GROUP BY DATE_TRUNC('month', o.order_date)
+ORDER BY month;",[],0,303.63179999403656,5271.783000032883,How much revenue did each month in 2025 generate?,12,True,0
+Q038,time-based,,[1408.0956999678165],"SELECT customer_id, name, country, signup_date, segment
+FROM customers
+WHERE signup_date < DATE '2024-01-01';",[],0,1408.0956999678165,6279.650200041942,Which customers signed up before 2024?,8125,True,0
+Q039,time-based,,[272.35680003650486],"SELECT COUNT(*) AS orders_q1_2025
+FROM orders
+WHERE order_date >= DATE '2025-01-01'
+  AND order_date <= DATE '2025-03-31';",[],0,272.35680003650486,5465.660199988633,How many orders were placed in the first quarter of 2025?,1,True,0
+Q040,time-based,,[1380.2627999684773],"SELECT DISTINCT o.order_id
+FROM orders o
+JOIN shipments s ON s.order_id = o.order_id
+WHERE s.shipped_date > o.order_date + INTERVAL '30 days';",[],0,1380.2627999684773,6217.5599000183865,Which orders were shipped after 30 days?,26547,True,0
+Q041,distinct,,[258.0469000386074],"SELECT COUNT(DISTINCT country) AS distinct_country_count
+FROM customers;",[],0,258.0469000386074,4592.158899991773,How many distinct countries are represented by customers?,1,True,0
+Q042,distinct,,[321.00950001040474],"SELECT COUNT(DISTINCT oi.product_id) AS distinct_products_2025
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.order_id
+WHERE o.order_date >= DATE '2025-01-01'
+  AND o.order_date < DATE '2026-01-01';",[],0,321.00950001040474,4864.696100004949,How many distinct products were ordered in 2025?,1,True,0
+Q043,distinct,,[309.99310000333935],"SELECT COUNT(*) AS customers_with_multiple_orders
+FROM (
+    SELECT customer_id
+    FROM orders
+    GROUP BY customer_id
+    HAVING COUNT(*) > 1
+) AS sub;",[],0,309.99310000333935,4913.80720003508,How many customers have more than one order?,1,True,0
+Q044,subquery,,[267.64519995776936],"SELECT DISTINCT c.customer_id, c.name
+FROM customers c
+JOIN orders o ON o.customer_id = c.customer_id
+JOIN payments p ON p.order_id = o.order_id
+WHERE p.status = 'Completed';",[],0,267.64519995776936,5740.542299987283,Which customers have at least one successful payment?,0,True,0
+Q045,subquery,,[436.7301999591291],"SELECT p.product_id,
+       p.name
+FROM   products p
+WHERE  NOT EXISTS (SELECT 1
+                   FROM   order_items oi
+                   WHERE  oi.product_id = p.product_id);",[],0,436.7301999591291,5790.514199994504,Which products have never been ordered?,0,True,0
+Q046,subquery,,[2510.8437999733724],"SELECT DISTINCT c.customer_id,
+       c.name,
+       c.country,
+       c.segment
+FROM customers c
+JOIN orders o ON o.customer_id = c.customer_id
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM payments p
+    JOIN orders o2 ON p.order_id = o2.order_id
+    WHERE o2.customer_id = c.customer_id
+      AND p.status = 'Completed'
+);",[],0,2510.8437999733724,8163.996600022074,Which customers placed orders but never paid successfully?,10000,True,0
+Q047,window,,[298.27349999686703],"WITH monthly AS (
+    SELECT date_trunc('month', order_date)::date AS month,
+           SUM(total_amount) AS revenue
+    FROM orders
+    WHERE order_date >= DATE '2025-01-01'
+      AND order_date < DATE '2026-01-01'
+    GROUP BY date_trunc('month', order_date)
+)
+SELECT month,
+       revenue,
+       SUM(revenue) OVER (ORDER BY month) AS cumulative_revenue
+FROM monthly
+ORDER BY month;",[],0,298.27349999686703,4980.547300016042,Compute cumulative revenue for each month in 2025.,12,True,0
+Q048,window,,[1448.9493000437506],"SELECT
+    c.customer_id,
+    c.name,
+    COALESCE(o.total_spend, 0) AS total_spend,
+    RANK() OVER (ORDER BY COALESCE(o.total_spend, 0) DESC) AS rank
+FROM
+    customers c
+LEFT JOIN (
+    SELECT
+        o.customer_id,
+        SUM(o.total_amount) AS total_spend
+    FROM
+        orders o
+    WHERE
+        EXTRACT(YEAR FROM o.order_date) = 2025
+    GROUP BY
+        o.customer_id
+) o ON c.customer_id = o.customer_id
+ORDER BY
+    total_spend DESC;",[],0,1448.9493000437506,6490.070300002117,Rank customers by total spend in 2025.,10000,True,0
+Q049,optimization,,[321.5941999806091],"SELECT SUM(o.total_amount) AS total_revenue
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+WHERE c.country = 'India';",[],0,321.5941999806091,5037.344100011978,What was the total revenue from customers in India without using any irrelevant join tables?,1,True,0
+Q050,optimization,,[326.9290000316687],"SELECT c.category_id, c.name
+FROM categories c
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM order_items oi
+    JOIN orders o ON oi.order_id = o.order_id
+    JOIN products p ON oi.product_id = p.product_id
+    WHERE p.category_id = c.category_id
+      AND o.order_date >= DATE '2025-01-01'
+      AND o.order_date < DATE '2026-01-01'
+);",[],0,326.9290000316687,5444.90980001865,Which categories did not generate any revenue in 2025?,0,True,0
