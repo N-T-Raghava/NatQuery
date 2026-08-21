@@ -1,0 +1,852 @@
+[
+  {
+    "benchmark_id": "Q001",
+    "question": "What was the total revenue from customers in India in 2025?",
+    "category": "optimization",
+    "success": true,
+    "generated_sql": "SELECT SUM(o.total_amount) AS total_revenue\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.country = 'India'\n  AND EXTRACT(YEAR FROM o.order_date) = 2025;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      538.5981000144966
+    ],
+    "median_execution_time_ms": 538.5981000144966,
+    "error": null,
+    "pipeline_latency_ms": 20067.194000002928
+  },
+  {
+    "benchmark_id": "Q002",
+    "question": "How many orders did each customer place?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT\n    c.customer_id,\n    c.name,\n    COUNT(o.order_id) AS orders_placed\nFROM\n    customers c\nLEFT JOIN\n    orders o ON o.customer_id = c.customer_id\nGROUP BY\n    c.customer_id,\n    c.name;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10000,
+    "execution_times_ms": [
+      1242.4814000260085
+    ],
+    "median_execution_time_ms": 1242.4814000260085,
+    "error": null,
+    "pipeline_latency_ms": 15832.532300031744
+  },
+  {
+    "benchmark_id": "Q003",
+    "question": "Which product category generated the highest revenue in 2025?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT c.name AS category,\n       SUM(oi.quantity * oi.unit_price) AS revenue\nFROM   order_items oi\nJOIN   orders o ON oi.order_id = o.order_id\nJOIN   products p ON oi.product_id = p.product_id\nJOIN   categories c ON p.category_id = c.category_id\nWHERE  EXTRACT(YEAR FROM o.order_date) = 2025\nGROUP  BY c.name\nORDER  BY revenue DESC\nLIMIT 1;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      2255.437699961476
+    ],
+    "median_execution_time_ms": 2255.437699961476,
+    "error": null,
+    "pipeline_latency_ms": 11752.638500009198
+  },
+  {
+    "benchmark_id": "Q004",
+    "question": "How many customers placed at least one order in 2025?",
+    "category": "distinct",
+    "success": true,
+    "generated_sql": "SELECT COUNT(DISTINCT o.customer_id) AS customers_with_orders_2025\nFROM orders o\nWHERE o.order_date >= DATE '2025-01-01'\n  AND o.order_date <= DATE '2025-12-31';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      401.54319995781407
+    ],
+    "median_execution_time_ms": 401.54319995781407,
+    "error": null,
+    "pipeline_latency_ms": 9668.669100035913
+  },
+  {
+    "benchmark_id": "Q005",
+    "question": "What is the average order value for orders placed in India in 2025?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT AVG(o.total_amount) AS average_order_value\nFROM orders o\nJOIN customers c ON o.customer_id = c.customer_id\nWHERE c.country = 'India'\n  AND o.order_date >= DATE '2025-01-01'\n  AND o.order_date <= DATE '2025-12-31';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      274.4721000199206
+    ],
+    "median_execution_time_ms": 274.4721000199206,
+    "error": null,
+    "pipeline_latency_ms": 9941.160000045784
+  },
+  {
+    "benchmark_id": "Q006",
+    "question": "Which customers have never placed an order?",
+    "category": "filtering",
+    "success": true,
+    "generated_sql": "SELECT\n    c.customer_id,\n    c.name,\n    c.country,\n    c.signup_date,\n    c.segment\nFROM\n    customers c\nLEFT JOIN\n    orders o\nON\n    c.customer_id = o.customer_id\nWHERE\n    o.order_id IS NULL;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      277.98089996213093
+    ],
+    "median_execution_time_ms": 277.98089996213093,
+    "error": null,
+    "pipeline_latency_ms": 9188.957999984268
+  },
+  {
+    "benchmark_id": "Q007",
+    "question": "What percentage of orders were successfully paid?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT\n    ROUND(\n        100.0 *\n        SUM(\n            CASE\n                WHEN EXISTS (\n                    SELECT 1\n                    FROM payments p\n                    WHERE p.order_id = o.order_id\n                      AND p.status = 'Completed'\n                ) THEN 1\n                ELSE 0\n            END\n        ) / COUNT(*),\n        2\n    ) AS percent_successful_paid\nFROM orders o;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      1068.4036000166088
+    ],
+    "median_execution_time_ms": 1068.4036000166088,
+    "error": null,
+    "pipeline_latency_ms": 11301.073500013445
+  },
+  {
+    "benchmark_id": "Q008",
+    "question": "Which supplier generated the most sales revenue?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT s.supplier_id,\n       s.name,\n       SUM(oi.quantity * oi.unit_price) AS total_revenue\nFROM   order_items oi\nJOIN   products p ON oi.product_id = p.product_id\nJOIN   suppliers s ON p.supplier_id = s.supplier_id\nGROUP  BY s.supplier_id, s.name\nORDER  BY total_revenue DESC\nLIMIT 1;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      470.1766999787651
+    ],
+    "median_execution_time_ms": 470.1766999787651,
+    "error": null,
+    "pipeline_latency_ms": 10185.981799964793
+  },
+  {
+    "benchmark_id": "Q009",
+    "question": "What was monthly revenue in 2025?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT\n    DATE_TRUNC('month', o.order_date) AS month,\n    SUM(o.total_amount) AS revenue\nFROM orders o\nWHERE o.order_date >= DATE '2025-01-01'\n  AND o.order_date < DATE '2026-01-01'\nGROUP BY DATE_TRUNC('month', o.order_date)\nORDER BY month;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 12,
+    "execution_times_ms": [
+      291.52659996179864
+    ],
+    "median_execution_time_ms": 291.52659996179864,
+    "error": null,
+    "pipeline_latency_ms": 9337.726600002497
+  },
+  {
+    "benchmark_id": "Q010",
+    "question": "Which customers spent more than the average customer in 2025?",
+    "category": "subquery",
+    "success": true,
+    "generated_sql": "WITH customer_spending AS (\n  SELECT c.customer_id,\n         c.name,\n         SUM(o.total_amount) AS total_spent\n  FROM customers c\n  JOIN orders o ON c.customer_id = o.customer_id\n  WHERE o.order_date >= DATE '2025-01-01'\n    AND o.order_date < DATE '2026-01-01'\n  GROUP BY c.customer_id, c.name\n),\navg_spending AS (\n  SELECT AVG(total_spent) AS avg_total\n  FROM customer_spending\n)\nSELECT cs.customer_id,\n       cs.name,\n       cs.total_spent\nFROM customer_spending cs\nCROSS JOIN avg_spending a\nWHERE cs.total_spent > a.avg_total;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 4849,
+    "execution_times_ms": [
+      1306.745800015051
+    ],
+    "median_execution_time_ms": 1306.745800015051,
+    "error": null,
+    "pipeline_latency_ms": 12614.073899982031
+  },
+  {
+    "benchmark_id": "Q011",
+    "question": "List the top 10 highest-value orders in 2025.",
+    "category": "simple retrieval",
+    "success": true,
+    "generated_sql": "SELECT\n    o.order_id,\n    o.total_amount,\n    o.order_date\nFROM\n    orders AS o\nWHERE\n    o.order_date >= DATE '2025-01-01'\n    AND o.order_date < DATE '2026-01-01'\nORDER BY\n    o.total_amount DESC\nLIMIT 10;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10,
+    "execution_times_ms": [
+      287.23090002313256
+    ],
+    "median_execution_time_ms": 287.23090002313256,
+    "error": null,
+    "pipeline_latency_ms": 12601.757899974473
+  },
+  {
+    "benchmark_id": "Q012",
+    "question": "Which customers are from the United States?",
+    "category": "filtering",
+    "success": true,
+    "generated_sql": "SELECT\n    customer_id,\n    name,\n    country,\n    signup_date,\n    segment\nFROM\n    customers\nWHERE\n    country = 'United States';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      280.2535999799147
+    ],
+    "median_execution_time_ms": 280.2535999799147,
+    "error": null,
+    "pipeline_latency_ms": 11567.463299958035
+  },
+  {
+    "benchmark_id": "Q013",
+    "question": "How many active products exist?",
+    "category": "simple retrieval",
+    "success": true,
+    "generated_sql": "SELECT COUNT(*) AS active_product_count\nFROM products\nWHERE active = TRUE;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      271.0392000153661
+    ],
+    "median_execution_time_ms": 271.0392000153661,
+    "error": null,
+    "pipeline_latency_ms": 9412.04620001372
+  },
+  {
+    "benchmark_id": "Q014",
+    "question": "What is the average product price by category?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT\n    c.name AS category_name,\n    AVG(p.price) AS average_price\nFROM\n    products p\nJOIN\n    categories c ON p.category_id = c.category_id\nGROUP BY\n    c.name;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 100,
+    "execution_times_ms": [
+      332.79990003211424
+    ],
+    "median_execution_time_ms": 332.79990003211424,
+    "error": null,
+    "pipeline_latency_ms": 12422.234099998605
+  },
+  {
+    "benchmark_id": "Q015",
+    "question": "Which categories have more than 50 active products?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT c.category_id, c.name\nFROM categories c\nJOIN products p ON p.category_id = c.category_id\nWHERE p.active = TRUE\nGROUP BY c.category_id, c.name\nHAVING COUNT(*) > 50;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      269.9640999780968
+    ],
+    "median_execution_time_ms": 269.9640999780968,
+    "error": null,
+    "pipeline_latency_ms": 10495.660800021142
+  },
+  {
+    "benchmark_id": "Q016",
+    "question": "How many orders were cancelled?",
+    "category": "filtering",
+    "success": true,
+    "generated_sql": "SELECT COUNT(*) AS cancelled_orders\nFROM orders\nWHERE status = 'cancelled';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      272.5874000461772
+    ],
+    "median_execution_time_ms": 272.5874000461772,
+    "error": null,
+    "pipeline_latency_ms": 8543.359200004488
+  },
+  {
+    "benchmark_id": "Q017",
+    "question": "What is the average order amount by status?",
+    "category": "aggregation",
+    "success": true,
+    "generated_sql": "SELECT\n    o.status,\n    AVG(o.total_amount) AS average_order_amount\nFROM\n    orders AS o\nGROUP BY\n    o.status;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 4,
+    "execution_times_ms": [
+      285.3567999554798
+    ],
+    "median_execution_time_ms": 285.3567999554798,
+    "error": null,
+    "pipeline_latency_ms": 8736.62720003631
+  },
+  {
+    "benchmark_id": "Q018",
+    "question": "Show all orders for customer 42.",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT o.*\nFROM orders AS o\nJOIN customers AS c ON o.customer_id = c.customer_id\nWHERE c.customer_id = 42;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10,
+    "execution_times_ms": [
+      260.18320000730455
+    ],
+    "median_execution_time_ms": 260.18320000730455,
+    "error": null,
+    "pipeline_latency_ms": 9286.818800028414
+  },
+  {
+    "benchmark_id": "Q019",
+    "question": "What is the total revenue for each customer in 2025?",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT\n    c.customer_id,\n    c.name,\n    SUM(o.total_amount) AS total_revenue\nFROM\n    customers c\nJOIN\n    orders o\n    ON c.customer_id = o.customer_id\nWHERE\n    o.order_date >= DATE '2025-01-01'\n    AND o.order_date < DATE '2026-01-01'\nGROUP BY\n    c.customer_id,\n    c.name;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10000,
+    "execution_times_ms": [
+      1423.3510000049137
+    ],
+    "median_execution_time_ms": 1423.3510000049137,
+    "error": null,
+    "pipeline_latency_ms": 10928.525199997239
+  },
+  {
+    "benchmark_id": "Q020",
+    "question": "What is the total revenue by payment method?",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT\n    method,\n    SUM(amount) AS total_revenue\nFROM\n    payments\nGROUP BY\n    method\nORDER BY\n    total_revenue DESC;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 4,
+    "execution_times_ms": [
+      296.91739997360855
+    ],
+    "median_execution_time_ms": 296.91739997360855,
+    "error": null,
+    "pipeline_latency_ms": 10251.440099964384
+  },
+  {
+    "benchmark_id": "Q021",
+    "question": "Which products were sold in the last 30 days?",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT DISTINCT p.product_id, p.name\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nJOIN orders o ON oi.order_id = o.order_id\nWHERE o.order_date >= CURRENT_DATE - INTERVAL '30 days';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      269.2617999855429
+    ],
+    "median_execution_time_ms": 269.2617999855429,
+    "error": null,
+    "pipeline_latency_ms": 9215.731800009962
+  },
+  {
+    "benchmark_id": "Q022",
+    "question": "Which suppliers are based in India?",
+    "category": "simple retrieval",
+    "success": true,
+    "generated_sql": "SELECT supplier_id, name\nFROM suppliers\nWHERE country = 'India';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 500,
+    "execution_times_ms": [
+      507.59740005014464
+    ],
+    "median_execution_time_ms": 507.59740005014464,
+    "error": null,
+    "pipeline_latency_ms": 9612.97320004087
+  },
+  {
+    "benchmark_id": "Q023",
+    "question": "Which orders have associated shipments?",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT o.*\nFROM orders AS o\nJOIN shipments AS s\n  ON o.order_id = s.order_id;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 100000,
+    "execution_times_ms": [
+      2478.1966999871656
+    ],
+    "median_execution_time_ms": 2478.1966999871656,
+    "error": null,
+    "pipeline_latency_ms": 13825.492000032682
+  },
+  {
+    "benchmark_id": "Q024",
+    "question": "How many products does each supplier provide?",
+    "category": "simple joins",
+    "success": true,
+    "generated_sql": "SELECT\n    s.supplier_id,\n    s.name AS supplier_name,\n    COUNT(p.product_id) AS product_count\nFROM\n    suppliers s\nJOIN\n    products p\n    ON p.supplier_id = s.supplier_id\nGROUP BY\n    s.supplier_id,\n    s.name;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 500,
+    "execution_times_ms": [
+      528.0929000000469
+    ],
+    "median_execution_time_ms": 528.0929000000469,
+    "error": null,
+    "pipeline_latency_ms": 9640.03769995179
+  },
+  {
+    "benchmark_id": "Q025",
+    "question": "Which category had the highest total order value in 2025?",
+    "category": "multi-table joins",
+    "success": true,
+    "generated_sql": "SELECT c.category_id,\n       c.name,\n       SUM(oi.quantity * oi.unit_price) AS total_value\nFROM orders o\nJOIN order_items oi ON o.order_id = oi.order_id\nJOIN products p ON oi.product_id = p.product_id\nJOIN categories c ON p.category_id = c.category_id\nWHERE o.order_date >= DATE '2025-01-01'\n  AND o.order_date < DATE '2026-01-01'\nGROUP BY c.category_id, c.name\nORDER BY total_value DESC\nLIMIT 1;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      418.81430003559217
+    ],
+    "median_execution_time_ms": 418.81430003559217,
+    "error": null,
+    "pipeline_latency_ms": 9957.031800004188
+  },
+  {
+    "benchmark_id": "Q026",
+    "question": "Which warehouse shipped the most orders in 2025?",
+    "category": "multi-table joins",
+    "success": true,
+    "generated_sql": "SELECT w.warehouse_id,\n       w.name,\n       COUNT(s.shipment_id) AS shipments_count\nFROM shipments s\nJOIN warehouses w ON s.warehouse_id = w.warehouse_id\nWHERE s.shipped_date >= DATE '2025-01-01'\n  AND s.shipped_date < DATE '2026-01-01'\nGROUP BY w.warehouse_id, w.name\nORDER BY shipments_count DESC\nLIMIT 1;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      349.8355999472551
+    ],
+    "median_execution_time_ms": 349.8355999472551,
+    "error": null,
+    "pipeline_latency_ms": 12322.736500005703
+  },
+  {
+    "benchmark_id": "Q027",
+    "question": "Which customers placed orders that were shipped to the East region?",
+    "category": "multi-table joins",
+    "success": true,
+    "generated_sql": "SELECT DISTINCT c.customer_id, c.name\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nJOIN shipments s ON o.order_id = s.order_id\nJOIN warehouses w ON s.warehouse_id = w.warehouse_id\nWHERE w.region = 'East';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 3900,
+    "execution_times_ms": [
+      1084.817600029055
+    ],
+    "median_execution_time_ms": 1084.817600029055,
+    "error": null,
+    "pipeline_latency_ms": 12664.684499963187
+  },
+  {
+    "benchmark_id": "Q028",
+    "question": "How many successful payments were made by card?",
+    "category": "filtering",
+    "success": true,
+    "generated_sql": "SELECT COUNT(*) AS successful_card_payments\nFROM payments\nWHERE status = 'successful'\n  AND method = 'card';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      268.9727999968454
+    ],
+    "median_execution_time_ms": 268.9727999968454,
+    "error": null,
+    "pipeline_latency_ms": 10871.414199995343
+  },
+  {
+    "benchmark_id": "Q029",
+    "question": "What was the sales total for each supplier in 2025?",
+    "category": "multi-table joins",
+    "success": true,
+    "generated_sql": "SELECT\n    s.supplier_id,\n    s.name AS supplier_name,\n    SUM(oi.quantity * oi.unit_price) AS total_sales\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN products p ON p.product_id = oi.product_id\nJOIN suppliers s ON s.supplier_id = p.supplier_id\nWHERE o.order_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'\nGROUP BY s.supplier_id, s.name\nORDER BY total_sales DESC;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 500,
+    "execution_times_ms": [
+      713.6915000155568
+    ],
+    "median_execution_time_ms": 713.6915000155568,
+    "error": null,
+    "pipeline_latency_ms": 10547.632100002375
+  },
+  {
+    "benchmark_id": "Q030",
+    "question": "List the orders whose payment status is pending and shipment status is delivered.",
+    "category": "multi-table joins",
+    "success": true,
+    "generated_sql": "SELECT o.*\nFROM orders o\nJOIN payments p ON p.order_id = o.order_id\nJOIN shipments s ON s.order_id = o.order_id\nWHERE p.status = 'pending'\n  AND s.status = 'delivered';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 8334,
+    "execution_times_ms": [
+      1599.620099994354
+    ],
+    "median_execution_time_ms": 1599.620099994354,
+    "error": null,
+    "pipeline_latency_ms": 11702.211299969349
+  },
+  {
+    "benchmark_id": "Q031",
+    "question": "What is the total revenue by country for 2025?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT\n    c.country,\n    SUM(o.total_amount) AS total_revenue\nFROM\n    orders o\nJOIN\n    customers c ON o.customer_id = c.customer_id\nWHERE\n    EXTRACT(YEAR FROM o.order_date) = 2025\nGROUP BY\n    c.country;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 8,
+    "execution_times_ms": [
+      397.50589994946495
+    ],
+    "median_execution_time_ms": 397.50589994946495,
+    "error": null,
+    "pipeline_latency_ms": 10787.660200032406
+  },
+  {
+    "benchmark_id": "Q032",
+    "question": "Which segments have average order value above 500?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT\n    c.segment\nFROM\n    orders o\nJOIN\n    customers c ON o.customer_id = c.customer_id\nGROUP BY\n    c.segment\nHAVING\n    AVG(o.total_amount) > 500;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 4,
+    "execution_times_ms": [
+      356.33590002544224
+    ],
+    "median_execution_time_ms": 356.33590002544224,
+    "error": null,
+    "pipeline_latency_ms": 9867.175900028087
+  },
+  {
+    "benchmark_id": "Q033",
+    "question": "Which warehouse regions shipped the most units in 2025?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT w.region,\n       SUM(oi.quantity) AS total_units\nFROM shipments s\nJOIN warehouses w ON s.warehouse_id = w.warehouse_id\nJOIN orders o ON s.order_id = o.order_id\nJOIN order_items oi ON o.order_id = oi.order_id\nWHERE s.shipped_date BETWEEN DATE '2025-01-01' AND DATE '2025-12-31'\nGROUP BY w.region\nORDER BY total_units DESC;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 4,
+    "execution_times_ms": [
+      493.661799991969
+    ],
+    "median_execution_time_ms": 493.661799991969,
+    "error": null,
+    "pipeline_latency_ms": 10382.262800005265
+  },
+  {
+    "benchmark_id": "Q034",
+    "question": "Which customers have spent more than 10,000 total across all orders?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT\n    c.customer_id,\n    c.name,\n    c.country,\n    c.signup_date,\n    c.segment,\n    SUM(o.total_amount) AS total_spent\nFROM\n    customers c\nJOIN\n    orders o ON c.customer_id = o.customer_id\nGROUP BY\n    c.customer_id,\n    c.name,\n    c.country,\n    c.signup_date,\n    c.segment\nHAVING\n    SUM(o.total_amount) > 10000;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 8758,
+    "execution_times_ms": [
+      1475.0367000233382
+    ],
+    "median_execution_time_ms": 1475.0367000233382,
+    "error": null,
+    "pipeline_latency_ms": 10974.076099984813
+  },
+  {
+    "benchmark_id": "Q035",
+    "question": "Which products have average sold quantity above 3?",
+    "category": "groupby",
+    "success": true,
+    "generated_sql": "SELECT\n    p.product_id,\n    p.name,\n    AVG(oi.quantity) AS avg_quantity\nFROM\n    products p\nJOIN\n    order_items oi ON p.product_id = oi.product_id\nGROUP BY\n    p.product_id,\n    p.name\nHAVING\n    AVG(oi.quantity) > 3;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 2000,
+    "execution_times_ms": [
+      1063.1926999776624
+    ],
+    "median_execution_time_ms": 1063.1926999776624,
+    "error": null,
+    "pipeline_latency_ms": 10130.69949997589
+  },
+  {
+    "benchmark_id": "Q036",
+    "question": "What was total revenue in January 2025?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT SUM(o.total_amount) AS total_revenue\nFROM orders o\nWHERE o.order_date >= DATE '2025-01-01'\n  AND o.order_date < DATE '2025-02-01';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      290.078199992422
+    ],
+    "median_execution_time_ms": 290.078199992422,
+    "error": null,
+    "pipeline_latency_ms": 9227.289100002963
+  },
+  {
+    "benchmark_id": "Q037",
+    "question": "How much revenue did each month in 2025 generate?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT DATE_TRUNC('month', o.order_date) AS month,\n       SUM(o.total_amount) AS revenue\nFROM   orders o\nWHERE  EXTRACT(YEAR FROM o.order_date) = 2025\nGROUP  BY DATE_TRUNC('month', o.order_date)\nORDER  BY month;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 12,
+    "execution_times_ms": [
+      301.83360003866255
+    ],
+    "median_execution_time_ms": 301.83360003866255,
+    "error": null,
+    "pipeline_latency_ms": 10314.075700007379
+  },
+  {
+    "benchmark_id": "Q038",
+    "question": "Which customers signed up before 2024?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT *\nFROM customers\nWHERE signup_date < DATE '2024-01-01';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 8125,
+    "execution_times_ms": [
+      1498.1350000016391
+    ],
+    "median_execution_time_ms": 1498.1350000016391,
+    "error": null,
+    "pipeline_latency_ms": 11319.902300019749
+  },
+  {
+    "benchmark_id": "Q039",
+    "question": "How many orders were placed in the first quarter of 2025?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT COUNT(*) AS orders_first_quarter_2025\nFROM orders\nWHERE order_date >= DATE '2025-01-01'\n  AND order_date <= DATE '2025-03-31';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      285.2927999920212
+    ],
+    "median_execution_time_ms": 285.2927999920212,
+    "error": null,
+    "pipeline_latency_ms": 9379.907099995762
+  },
+  {
+    "benchmark_id": "Q040",
+    "question": "Which orders were shipped after 30 days?",
+    "category": "time-based",
+    "success": true,
+    "generated_sql": "SELECT\n    o.order_id,\n    o.order_date,\n    s.shipped_date,\n    (s.shipped_date - o.order_date) AS days_between\nFROM\n    orders AS o\nJOIN\n    shipments AS s\n    ON o.order_id = s.order_id\nWHERE\n    s.shipped_date > o.order_date + INTERVAL '30 days';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 30139,
+    "execution_times_ms": [
+      11068.05030000396
+    ],
+    "median_execution_time_ms": 11068.05030000396,
+    "error": null,
+    "pipeline_latency_ms": 23242.416799999774
+  },
+  {
+    "benchmark_id": "Q041",
+    "question": "How many distinct countries are represented by customers?",
+    "category": "distinct",
+    "success": true,
+    "generated_sql": "SELECT COUNT(DISTINCT country) AS distinct_country_count\nFROM customers;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      300.8603999624029
+    ],
+    "median_execution_time_ms": 300.8603999624029,
+    "error": null,
+    "pipeline_latency_ms": 10196.32809999166
+  },
+  {
+    "benchmark_id": "Q042",
+    "question": "How many distinct products were ordered in 2025?",
+    "category": "distinct",
+    "success": true,
+    "generated_sql": "SELECT COUNT(DISTINCT oi.product_id) AS distinct_products_2025\nFROM order_items oi\nJOIN orders o ON oi.order_id = o.order_id\nWHERE EXTRACT(YEAR FROM o.order_date) = 2025;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      403.85140001308173
+    ],
+    "median_execution_time_ms": 403.85140001308173,
+    "error": null,
+    "pipeline_latency_ms": 10215.531900001224
+  },
+  {
+    "benchmark_id": "Q043",
+    "question": "How many customers have more than one order?",
+    "category": "distinct",
+    "success": true,
+    "generated_sql": "SELECT COUNT(*) AS customers_with_multiple_orders\nFROM (\n    SELECT customer_id\n    FROM orders\n    GROUP BY customer_id\n    HAVING COUNT(*) > 1\n) AS sub;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      282.27319999132305
+    ],
+    "median_execution_time_ms": 282.27319999132305,
+    "error": null,
+    "pipeline_latency_ms": 10047.534200013615
+  },
+  {
+    "benchmark_id": "Q044",
+    "question": "Which customers have at least one successful payment?",
+    "category": "subquery",
+    "success": true,
+    "generated_sql": "SELECT DISTINCT c.customer_id, c.name\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nJOIN payments p ON p.order_id = o.order_id\nWHERE p.status = 'successful';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      291.4907999802381
+    ],
+    "median_execution_time_ms": 291.4907999802381,
+    "error": null,
+    "pipeline_latency_ms": 9990.143400034867
+  },
+  {
+    "benchmark_id": "Q045",
+    "question": "Which products have never been ordered?",
+    "category": "subquery",
+    "success": true,
+    "generated_sql": "SELECT p.product_id,\n       p.name,\n       p.category_id,\n       p.supplier_id,\n       p.price,\n       p.active\nFROM products p\nLEFT JOIN order_items oi ON p.product_id = oi.product_id\nWHERE oi.product_id IS NULL;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 0,
+    "execution_times_ms": [
+      460.67229995969683
+    ],
+    "median_execution_time_ms": 460.67229995969683,
+    "error": null,
+    "pipeline_latency_ms": 9846.809400012717
+  },
+  {
+    "benchmark_id": "Q046",
+    "question": "Which customers placed orders but never paid successfully?",
+    "category": "subquery",
+    "success": true,
+    "generated_sql": "SELECT DISTINCT c.customer_id,\n       c.name\nFROM   customers c\nWHERE  EXISTS (SELECT 1\n               FROM   orders o\n               WHERE  o.customer_id = c.customer_id)\n  AND NOT EXISTS (SELECT 1\n                  FROM   orders o\n                         JOIN payments p ON p.order_id = o.order_id\n                  WHERE  o.customer_id = c.customer_id\n                         AND p.status = 'Completed');",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10000,
+    "execution_times_ms": [
+      1304.8087999923155
+    ],
+    "median_execution_time_ms": 1304.8087999923155,
+    "error": null,
+    "pipeline_latency_ms": 11515.499700035434
+  },
+  {
+    "benchmark_id": "Q047",
+    "question": "Compute cumulative revenue for each month in 2025.",
+    "category": "window",
+    "success": true,
+    "generated_sql": "WITH monthly_revenue AS (\n    SELECT\n        date_trunc('month', order_date)::date AS month,\n        SUM(total_amount) AS revenue\n    FROM orders\n    WHERE order_date >= DATE '2025-01-01'\n      AND order_date <  DATE '2026-01-01'\n    GROUP BY date_trunc('month', order_date)\n)\nSELECT\n    month,\n    SUM(revenue) OVER (ORDER BY month\n                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative_revenue\nFROM monthly_revenue\nORDER BY month;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 12,
+    "execution_times_ms": [
+      304.97050000121817
+    ],
+    "median_execution_time_ms": 304.97050000121817,
+    "error": null,
+    "pipeline_latency_ms": 10478.48220000742
+  },
+  {
+    "benchmark_id": "Q048",
+    "question": "Rank customers by total spend in 2025.",
+    "category": "window",
+    "success": true,
+    "generated_sql": "SELECT\n    c.customer_id,\n    c.name,\n    SUM(o.total_amount) AS total_spend,\n    RANK() OVER (ORDER BY SUM(o.total_amount) DESC) AS spend_rank\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.order_date >= DATE '2025-01-01'\n  AND o.order_date < DATE '2026-01-01'\nGROUP BY c.customer_id, c.name\nORDER BY total_spend DESC;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 10000,
+    "execution_times_ms": [
+      1457.3175000259653
+    ],
+    "median_execution_time_ms": 1457.3175000259653,
+    "error": null,
+    "pipeline_latency_ms": 13210.261199972592
+  },
+  {
+    "benchmark_id": "Q049",
+    "question": "What was the total revenue from customers in India without using any irrelevant join tables?",
+    "category": "optimization",
+    "success": true,
+    "generated_sql": "SELECT SUM(o.total_amount) AS total_revenue\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE c.country = 'India';",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 1,
+    "execution_times_ms": [
+      380.69780002115294
+    ],
+    "median_execution_time_ms": 380.69780002115294,
+    "error": null,
+    "pipeline_latency_ms": 10703.34190002177
+  },
+  {
+    "benchmark_id": "Q050",
+    "question": "Which categories did not generate any revenue in 2025?",
+    "category": "optimization",
+    "success": true,
+    "generated_sql": "SELECT c.category_id, c.name\nFROM categories c\nLEFT JOIN products p ON p.category_id = c.category_id\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nLEFT JOIN orders o ON o.order_id = oi.order_id\n  AND o.order_date >= DATE '2025-01-01'\n  AND o.order_date < DATE '2026-01-01'\nWHERE o.order_id IS NULL;",
+    "generated_tables": [],
+    "table_count": 0,
+    "join_count": 0,
+    "rows_returned": 150427,
+    "execution_times_ms": [
+      4413.299200008623
+    ],
+    "median_execution_time_ms": 4413.299200008623,
+    "error": null,
+    "pipeline_latency_ms": 14612.670900009107
+  }
+]

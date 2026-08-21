@@ -35,6 +35,7 @@ classifiers = [
 
 dependencies = [
     "psycopg2-binary>=2.9.0",
+    "sqlglot>=25.0.0",
     "groq>=0.4.0",
     "rich>=13.0.0"
 ]
@@ -57,7 +58,8 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["natquery*", "benchmarks*"]
 
 [project.scripts]
 natquery = "natquery.cli.main:main"

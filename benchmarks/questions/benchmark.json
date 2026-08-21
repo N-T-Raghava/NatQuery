@@ -1,0 +1,1352 @@
+[
+  {
+    "id": "Q001",
+    "natural_language": "What was the total revenue from customers in India in 2025?",
+    "category": "optimization",
+    "difficulty": "medium",
+    "expected_result_semantics": "Total order amount for India orders in 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Core unnecessary-join test."
+  },
+  {
+    "id": "Q002",
+    "natural_language": "How many orders did each customer place?",
+    "category": "aggregation",
+    "difficulty": "easy",
+    "expected_result_semantics": "Order counts per customer, including zero-order customers.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Tests left joins and zero-order customers."
+  },
+  {
+    "id": "Q003",
+    "natural_language": "Which product category generated the highest revenue in 2025?",
+    "category": "aggregation",
+    "difficulty": "hard",
+    "expected_result_semantics": "Revenue by category for 2025, sorted descending and limited to the highest one.",
+    "required_tables": [
+      "orders",
+      "order_items",
+      "products",
+      "categories"
+    ],
+    "allowed_tables": [
+      "orders",
+      "order_items",
+      "products",
+      "categories"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 3,
+    "expected_max_join_count": 3,
+    "notes": "Tests a necessary multi-table join."
+  },
+  {
+    "id": "Q004",
+    "natural_language": "How many customers placed at least one order in 2025?",
+    "category": "distinct",
+    "difficulty": "medium",
+    "expected_result_semantics": "Distinct customer count with at least one order in 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Tests DISTINCT semantics."
+  },
+  {
+    "id": "Q005",
+    "natural_language": "What is the average order value for orders placed in India in 2025?",
+    "category": "aggregation",
+    "difficulty": "medium",
+    "expected_result_semantics": "Average order total for Indian orders in 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Ensures aggregation happens at the order level."
+  },
+  {
+    "id": "Q006",
+    "natural_language": "Which customers have never placed an order?",
+    "category": "filtering",
+    "difficulty": "medium",
+    "expected_result_semantics": "Customers with no order history.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Tests LEFT JOIN with null filtering."
+  },
+  {
+    "id": "Q007",
+    "natural_language": "What percentage of orders were successfully paid?",
+    "category": "aggregation",
+    "difficulty": "medium",
+    "expected_result_semantics": "Share of orders that have at least one successful payment record.",
+    "required_tables": [
+      "orders",
+      "payments"
+    ],
+    "allowed_tables": [
+      "orders",
+      "payments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Requires careful handling of duplicate payment rows."
+  },
+  {
+    "id": "Q008",
+    "natural_language": "Which supplier generated the most sales revenue?",
+    "category": "aggregation",
+    "difficulty": "hard",
+    "expected_result_semantics": "Supplier whose product sales generated the highest revenue.",
+    "required_tables": [
+      "suppliers",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "allowed_tables": [
+      "suppliers",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "categories",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 3,
+    "expected_max_join_count": 3,
+    "notes": "Tests multi-table revenue aggregation."
+  },
+  {
+    "id": "Q009",
+    "natural_language": "What was monthly revenue in 2025?",
+    "category": "time-based",
+    "difficulty": "medium",
+    "expected_result_semantics": "Monthly total revenue for 2025.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Tests time-based grouping."
+  },
+  {
+    "id": "Q010",
+    "natural_language": "Which customers spent more than the average customer in 2025?",
+    "category": "subquery",
+    "difficulty": "hard",
+    "expected_result_semantics": "Customers whose annual spend exceeds the average yearly customer total.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Subquery + aggregation."
+  },
+  {
+    "id": "Q011",
+    "natural_language": "List the top 10 highest-value orders in 2025.",
+    "category": "simple retrieval",
+    "difficulty": "easy",
+    "expected_result_semantics": "Top 10 orders by total amount in 2025.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Simple retrieval and ordering."
+  },
+  {
+    "id": "Q012",
+    "natural_language": "Which customers are from the United States?",
+    "category": "filtering",
+    "difficulty": "easy",
+    "expected_result_semantics": "All customers located in the USA.",
+    "required_tables": [
+      "customers"
+    ],
+    "allowed_tables": [
+      "customers"
+    ],
+    "forbidden_tables": [
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Filters on a single table."
+  },
+  {
+    "id": "Q013",
+    "natural_language": "How many active products exist?",
+    "category": "simple retrieval",
+    "difficulty": "easy",
+    "expected_result_semantics": "Number of active products.",
+    "required_tables": [
+      "products"
+    ],
+    "allowed_tables": [
+      "products"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Tests a simple boolean filter."
+  },
+  {
+    "id": "Q014",
+    "natural_language": "What is the average product price by category?",
+    "category": "aggregation",
+    "difficulty": "medium",
+    "expected_result_semantics": "Average product price grouped by category.",
+    "required_tables": [
+      "products",
+      "categories"
+    ],
+    "allowed_tables": [
+      "products",
+      "categories"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Basic join + grouping on product category."
+  },
+  {
+    "id": "Q015",
+    "natural_language": "Which categories have more than 50 active products?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "Categories with more than 50 active products.",
+    "required_tables": [
+      "products",
+      "categories"
+    ],
+    "allowed_tables": [
+      "products",
+      "categories"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Tests GROUP BY + HAVING semantics."
+  },
+  {
+    "id": "Q016",
+    "natural_language": "How many orders were cancelled?",
+    "category": "filtering",
+    "difficulty": "easy",
+    "expected_result_semantics": "Counts cancelled orders.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Simple status filtering."
+  },
+  {
+    "id": "Q017",
+    "natural_language": "What is the average order amount by status?",
+    "category": "aggregation",
+    "difficulty": "medium",
+    "expected_result_semantics": "Average order value grouped by order status.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Group-by on a single table."
+  },
+  {
+    "id": "Q018",
+    "natural_language": "Show all orders for customer 42.",
+    "category": "simple joins",
+    "difficulty": "easy",
+    "expected_result_semantics": "Orders for a specific customer.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Straight customer-to-order lookup."
+  },
+  {
+    "id": "Q019",
+    "natural_language": "What is the total revenue for each customer in 2025?",
+    "category": "simple joins",
+    "difficulty": "medium",
+    "expected_result_semantics": "Revenue totals per customer in 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Needing a join but no unnecessary tables."
+  },
+  {
+    "id": "Q020",
+    "natural_language": "What is the total revenue by payment method?",
+    "category": "simple joins",
+    "difficulty": "medium",
+    "expected_result_semantics": "Total payment revenue grouped by payment method.",
+    "required_tables": [
+      "payments"
+    ],
+    "allowed_tables": [
+      "payments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Single-table aggregate."
+  },
+  {
+    "id": "Q021",
+    "natural_language": "Which products were sold in the last 30 days?",
+    "category": "simple joins",
+    "difficulty": "medium",
+    "expected_result_semantics": "Distinct products sold in the most recent 30-day period.",
+    "required_tables": [
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "allowed_tables": [
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 2,
+    "expected_max_join_count": 2,
+    "notes": "Tests DISTINCT + join chain."
+  },
+  {
+    "id": "Q022",
+    "natural_language": "Which suppliers are based in India?",
+    "category": "simple retrieval",
+    "difficulty": "easy",
+    "expected_result_semantics": "All Indian suppliers.",
+    "required_tables": [
+      "suppliers"
+    ],
+    "allowed_tables": [
+      "suppliers"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Filter on supplier location."
+  },
+  {
+    "id": "Q023",
+    "natural_language": "Which orders have associated shipments?",
+    "category": "simple joins",
+    "difficulty": "medium",
+    "expected_result_semantics": "Orders with at least one shipment record.",
+    "required_tables": [
+      "orders",
+      "shipments"
+    ],
+    "allowed_tables": [
+      "orders",
+      "shipments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Tests join existence semantics."
+  },
+  {
+    "id": "Q024",
+    "natural_language": "How many products does each supplier provide?",
+    "category": "simple joins",
+    "difficulty": "easy",
+    "expected_result_semantics": "Product counts per supplier, including suppliers with zero products.",
+    "required_tables": [
+      "suppliers",
+      "products"
+    ],
+    "allowed_tables": [
+      "suppliers",
+      "products"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "categories",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Left join with aggregate."
+  },
+  {
+    "id": "Q025",
+    "natural_language": "Which category had the highest total order value in 2025?",
+    "category": "multi-table joins",
+    "difficulty": "hard",
+    "expected_result_semantics": "Category with maximum revenue in 2025.",
+    "required_tables": [
+      "categories",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "allowed_tables": [
+      "categories",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 3,
+    "expected_max_join_count": 3,
+    "notes": "Necessary multi-table revenue path."
+  },
+  {
+    "id": "Q026",
+    "natural_language": "Which warehouse shipped the most orders in 2025?",
+    "category": "multi-table joins",
+    "difficulty": "hard",
+    "expected_result_semantics": "Warehouse with the highest shipment count in 2025.",
+    "required_tables": [
+      "warehouses",
+      "shipments"
+    ],
+    "allowed_tables": [
+      "warehouses",
+      "shipments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Shipment volume analysis."
+  },
+  {
+    "id": "Q027",
+    "natural_language": "Which customers placed orders that were shipped to the East region?",
+    "category": "multi-table joins",
+    "difficulty": "hard",
+    "expected_result_semantics": "Customers whose orders were shipped via East-region warehouses.",
+    "required_tables": [
+      "customers",
+      "orders",
+      "shipments",
+      "warehouses"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders",
+      "shipments",
+      "warehouses"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments"
+    ],
+    "expected_min_join_count": 3,
+    "expected_max_join_count": 3,
+    "notes": "Cross-table path via orders and shipments."
+  },
+  {
+    "id": "Q028",
+    "natural_language": "How many successful payments were made by card?",
+    "category": "filtering",
+    "difficulty": "easy",
+    "expected_result_semantics": "Count of successful card payments.",
+    "required_tables": [
+      "payments"
+    ],
+    "allowed_tables": [
+      "payments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Simple multi-condition filter."
+  },
+  {
+    "id": "Q029",
+    "natural_language": "What was the sales total for each supplier in 2025?",
+    "category": "multi-table joins",
+    "difficulty": "hard",
+    "expected_result_semantics": "Revenue total by supplier for 2025.",
+    "required_tables": [
+      "suppliers",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "allowed_tables": [
+      "suppliers",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "categories",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 3,
+    "expected_max_join_count": 3,
+    "notes": "Revenue aggregation across supplier/product chain."
+  },
+  {
+    "id": "Q030",
+    "natural_language": "List the orders whose payment status is pending and shipment status is delivered.",
+    "category": "multi-table joins",
+    "difficulty": "hard",
+    "expected_result_semantics": "Orders with pending payment and delivered shipment status.",
+    "required_tables": [
+      "orders",
+      "payments",
+      "shipments"
+    ],
+    "allowed_tables": [
+      "orders",
+      "payments",
+      "shipments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "warehouses"
+    ],
+    "expected_min_join_count": 2,
+    "expected_max_join_count": 2,
+    "notes": "Cross-table status check."
+  },
+  {
+    "id": "Q031",
+    "natural_language": "What is the total revenue by country for 2025?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "Revenue per country for 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Aggregate per geographic group."
+  },
+  {
+    "id": "Q032",
+    "natural_language": "Which segments have average order value above 500?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "Customer segments with average order value above 500.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "GROUP BY + HAVING on a joined aggregate."
+  },
+  {
+    "id": "Q033",
+    "natural_language": "Which warehouse regions shipped the most units in 2025?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "Shipment counts by warehouse region.",
+    "required_tables": [
+      "shipments",
+      "warehouses"
+    ],
+    "allowed_tables": [
+      "shipments",
+      "warehouses"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Group by region with simple join."
+  },
+  {
+    "id": "Q034",
+    "natural_language": "Which customers have spent more than 10,000 total across all orders?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "High-value customers by total spend.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Aggregation and HAVING threshold."
+  },
+  {
+    "id": "Q035",
+    "natural_language": "Which products have average sold quantity above 3?",
+    "category": "groupby",
+    "difficulty": "medium",
+    "expected_result_semantics": "Products with average sold quantity greater than 3.",
+    "required_tables": [
+      "products",
+      "order_items"
+    ],
+    "allowed_tables": [
+      "products",
+      "order_items"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Join + GROUP BY + HAVING on product sales."
+  },
+  {
+    "id": "Q036",
+    "natural_language": "What was total revenue in January 2025?",
+    "category": "time-based",
+    "difficulty": "easy",
+    "expected_result_semantics": "Revenue generated during January 2025.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Single-table date range aggregate."
+  },
+  {
+    "id": "Q037",
+    "natural_language": "How much revenue did each month in 2025 generate?",
+    "category": "time-based",
+    "difficulty": "medium",
+    "expected_result_semantics": "Monthly revenue totals for 2025.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Time-based grouping across one table."
+  },
+  {
+    "id": "Q038",
+    "natural_language": "Which customers signed up before 2024?",
+    "category": "time-based",
+    "difficulty": "easy",
+    "expected_result_semantics": "Customers with signup date before 2024.",
+    "required_tables": [
+      "customers"
+    ],
+    "allowed_tables": [
+      "customers"
+    ],
+    "forbidden_tables": [
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Simple date filter on customer metadata."
+  },
+  {
+    "id": "Q039",
+    "natural_language": "How many orders were placed in the first quarter of 2025?",
+    "category": "time-based",
+    "difficulty": "easy",
+    "expected_result_semantics": "Number of orders during Q1 2025.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Date range count."
+  },
+  {
+    "id": "Q040",
+    "natural_language": "Which orders were shipped after 30 days?",
+    "category": "time-based",
+    "difficulty": "medium",
+    "expected_result_semantics": "Orders whose shipment duration exceeded 30 days.",
+    "required_tables": [
+      "orders",
+      "shipments"
+    ],
+    "allowed_tables": [
+      "orders",
+      "shipments"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Time delta logic across shipment records."
+  },
+  {
+    "id": "Q041",
+    "natural_language": "How many distinct countries are represented by customers?",
+    "category": "distinct",
+    "difficulty": "easy",
+    "expected_result_semantics": "Number of unique customer countries.",
+    "required_tables": [
+      "customers"
+    ],
+    "allowed_tables": [
+      "customers"
+    ],
+    "forbidden_tables": [
+      "orders",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Simple DISTINCT count."
+  },
+  {
+    "id": "Q042",
+    "natural_language": "How many distinct products were ordered in 2025?",
+    "category": "distinct",
+    "difficulty": "medium",
+    "expected_result_semantics": "Distinct products sold in 2025.",
+    "required_tables": [
+      "orders",
+      "order_items"
+    ],
+    "allowed_tables": [
+      "orders",
+      "order_items"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "DISTINCT on product IDs after join."
+  },
+  {
+    "id": "Q043",
+    "natural_language": "How many customers have more than one order?",
+    "category": "distinct",
+    "difficulty": "medium",
+    "expected_result_semantics": "Number of customers with multiple orders.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Duplicate-sensitive count based on count of orders per customer."
+  },
+  {
+    "id": "Q044",
+    "natural_language": "Which customers have at least one successful payment?",
+    "category": "subquery",
+    "difficulty": "medium",
+    "expected_result_semantics": "Customers linked to at least one successful payment.",
+    "required_tables": [
+      "customers",
+      "orders",
+      "payments"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders",
+      "payments"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 2,
+    "expected_max_join_count": 2,
+    "notes": "Equivalent to EXISTS semantics."
+  },
+  {
+    "id": "Q045",
+    "natural_language": "Which products have never been ordered?",
+    "category": "subquery",
+    "difficulty": "medium",
+    "expected_result_semantics": "Products that have never appeared in an order item.",
+    "required_tables": [
+      "products",
+      "order_items"
+    ],
+    "allowed_tables": [
+      "products",
+      "order_items"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "orders",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "NOT EXISTS pattern."
+  },
+  {
+    "id": "Q046",
+    "natural_language": "Which customers placed orders but never paid successfully?",
+    "category": "subquery",
+    "difficulty": "hard",
+    "expected_result_semantics": "Customers with order history but no successful payment on those orders.",
+    "required_tables": [
+      "customers",
+      "orders",
+      "payments"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders",
+      "payments"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 2,
+    "expected_max_join_count": 2,
+    "notes": "NOT EXISTS semantics across orders and payments."
+  },
+  {
+    "id": "Q047",
+    "natural_language": "Compute cumulative revenue for each month in 2025.",
+    "category": "window",
+    "difficulty": "hard",
+    "expected_result_semantics": "Monthly revenue with cumulative total across the year.",
+    "required_tables": [
+      "orders"
+    ],
+    "allowed_tables": [
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 0,
+    "expected_max_join_count": 0,
+    "notes": "Window function over grouped monthly totals."
+  },
+  {
+    "id": "Q048",
+    "natural_language": "Rank customers by total spend in 2025.",
+    "category": "window",
+    "difficulty": "hard",
+    "expected_result_semantics": "Customers ranked by annual spend in 2025.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Window ranking based on aggregated spend."
+  },
+  {
+    "id": "Q049",
+    "natural_language": "What was the total revenue from customers in India without using any irrelevant join tables?",
+    "category": "optimization",
+    "difficulty": "hard",
+    "expected_result_semantics": "Minimal two-table path for Indian revenue question.",
+    "required_tables": [
+      "customers",
+      "orders"
+    ],
+    "allowed_tables": [
+      "customers",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "order_items",
+      "products",
+      "categories",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 1,
+    "expected_max_join_count": 1,
+    "notes": "Optimization trap: do not add irrelevant join tables."
+  },
+  {
+    "id": "Q050",
+    "natural_language": "Which categories did not generate any revenue in 2025?",
+    "category": "optimization",
+    "difficulty": "hard",
+    "expected_result_semantics": "Categories with zero revenue in 2025.",
+    "required_tables": [
+      "categories",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "allowed_tables": [
+      "categories",
+      "products",
+      "order_items",
+      "orders"
+    ],
+    "forbidden_tables": [
+      "customers",
+      "suppliers",
+      "payments",
+      "shipments",
+      "warehouses"
+    ],
+    "expected_min_join_count": 2,
+    "expected_max_join_count": 2,
+    "notes": "Optimization trap based on zero-revenue categories."
+  }
+]
