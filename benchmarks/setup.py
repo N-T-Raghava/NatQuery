@@ -16,6 +16,7 @@ SEED = 1337
 # DATABASE
 # ============================================================
 
+
 def get_connection():
     database_url = os.getenv("DATABASE_URL")
 
@@ -63,6 +64,7 @@ SCALES = {
 # GENERATORS
 # ============================================================
 
+
 def generate_customers(count: int):
     countries = [
         "India",
@@ -87,8 +89,7 @@ def generate_customers(count: int):
             customer_id,
             f"Customer {customer_id}",
             countries[(customer_id * 7) % len(countries)],
-            date(2020, 1, 1)
-            + timedelta(days=(customer_id * 17) % 1800),
+            date(2020, 1, 1) + timedelta(days=(customer_id * 17) % 1800),
             segments[(customer_id * 3) % len(segments)],
         )
 
@@ -158,10 +159,7 @@ def generate_orders(
     for order_id in range(1, count + 1):
         customer_id = ((order_id * 13) % customers_count) + 1
 
-        order_date = (
-            date(2024, 1, 1)
-            + timedelta(days=(order_id * 17) % 730)
-        )
+        order_date = date(2024, 1, 1) + timedelta(days=(order_id * 17) % 730)
 
         status = statuses[(order_id * 5) % len(statuses)]
 
@@ -266,10 +264,7 @@ def generate_payments(
         if order_id % 3 == 0:
             continue
 
-        payment_date = (
-            date(2024, 1, 1)
-            + timedelta(days=(payment_id * 13) % 700)
-        )
+        payment_date = date(2024, 1, 1) + timedelta(days=(payment_id * 13) % 700)
 
         amount = round(
             rng.uniform(20.0, 2400.0),
@@ -292,10 +287,7 @@ def generate_payments(
     order_id = 1
 
     while payment_id <= count:
-        payment_date = (
-            date(2024, 1, 1)
-            + timedelta(days=(payment_id * 13) % 700)
-        )
+        payment_date = date(2024, 1, 1) + timedelta(days=(payment_id * 13) % 700)
 
         amount = round(
             rng.uniform(20.0, 2400.0),
@@ -363,18 +355,11 @@ def generate_shipments(
         if order_id % 4 == 0:
             continue
 
-        ship_date = (
-            date(2024, 1, 1)
-            + timedelta(days=(shipment_id * 11) % 500)
-        )
+        ship_date = date(2024, 1, 1) + timedelta(days=(shipment_id * 11) % 500)
 
-        delivery_date = ship_date + timedelta(
-            days=(shipment_id % 10) + 2
-        )
+        delivery_date = ship_date + timedelta(days=(shipment_id % 10) + 2)
 
-        warehouse_id = (
-            (shipment_id % warehouses_count) + 1
-        )
+        warehouse_id = (shipment_id % warehouses_count) + 1
 
         yield (
             shipment_id,
@@ -392,18 +377,11 @@ def generate_shipments(
     order_id = 1
 
     while shipment_id <= count:
-        ship_date = (
-            date(2024, 1, 1)
-            + timedelta(days=(shipment_id * 11) % 500)
-        )
+        ship_date = date(2024, 1, 1) + timedelta(days=(shipment_id * 11) % 500)
 
-        delivery_date = ship_date + timedelta(
-            days=(shipment_id % 10) + 2
-        )
+        delivery_date = ship_date + timedelta(days=(shipment_id % 10) + 2)
 
-        warehouse_id = (
-            (shipment_id % warehouses_count) + 1
-        )
+        warehouse_id = (shipment_id % warehouses_count) + 1
 
         yield (
             shipment_id,
@@ -425,6 +403,7 @@ def generate_shipments(
 # BULK INSERT
 # ============================================================
 
+
 def copy_rows(
     conn,
     table_name: str,
@@ -435,14 +414,9 @@ def copy_rows(
     Use PostgreSQL COPY for fast bulk loading.
     """
 
-    column_sql = sql.SQL(", ").join(
-        sql.Identifier(column)
-        for column in columns
-    )
+    column_sql = sql.SQL(", ").join(sql.Identifier(column) for column in columns)
 
-    query = sql.SQL(
-        "COPY {} ({}) FROM STDIN"
-    ).format(
+    query = sql.SQL("COPY {} ({}) FROM STDIN").format(
         sql.Identifier(table_name),
         column_sql,
     )
@@ -456,6 +430,7 @@ def copy_rows(
 # ============================================================
 # DATABASE RESET
 # ============================================================
+
 
 def clear_existing_data(conn):
     print("\nClearing existing benchmark data...")
@@ -485,6 +460,7 @@ def clear_existing_data(conn):
 # ============================================================
 # LOAD DATASET
 # ============================================================
+
 
 def seed_database(scale: str):
     config = SCALES[scale]
@@ -526,9 +502,7 @@ def seed_database(scale: str):
                 "category_id",
                 "name",
             ],
-            generate_categories(
-                config["categories"]
-            ),
+            generate_categories(config["categories"]),
         )
 
         conn.commit()
@@ -549,9 +523,7 @@ def seed_database(scale: str):
                 "signup_date",
                 "segment",
             ],
-            generate_customers(
-                config["customers"]
-            ),
+            generate_customers(config["customers"]),
         )
 
         conn.commit()
@@ -570,9 +542,7 @@ def seed_database(scale: str):
                 "name",
                 "country",
             ],
-            generate_suppliers(
-                config["suppliers"]
-            ),
+            generate_suppliers(config["suppliers"]),
         )
 
         conn.commit()
@@ -695,9 +665,7 @@ def seed_database(scale: str):
                 "name",
                 "region",
             ],
-            generate_warehouses(
-                config["warehouses"]
-            ),
+            generate_warehouses(config["warehouses"]),
         )
 
         conn.commit()
@@ -754,6 +722,7 @@ def seed_database(scale: str):
 # VERIFICATION
 # ============================================================
 
+
 def verify_database(conn, expected):
     print("\n" + "=" * 70)
     print("VERIFYING DATABASE")
@@ -779,11 +748,7 @@ def verify_database(conn, expected):
 
         for table in tables:
             cur.execute(
-                sql.SQL(
-                    "SELECT COUNT(*) FROM {}"
-                ).format(
-                    sql.Identifier(table)
-                )
+                sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(table))
             )
 
             actual = cur.fetchone()[0]
@@ -796,12 +761,7 @@ def verify_database(conn, expected):
 
             status = "OK" if ok else "ERROR"
 
-            print(
-                f"  {table:<15} "
-                f"{actual:>12,} / "
-                f"{target:>12,} "
-                f"[{status}]"
-            )
+            print(f"  {table:<15} " f"{actual:>12,} / " f"{target:>12,} " f"[{status}]")
 
         # ----------------------------------------------------
         # Foreign-key integrity
@@ -903,9 +863,7 @@ def verify_database(conn, expected):
 
             status = "OK" if ok else f"ERROR ({invalid})"
 
-            print(
-                f"  {name:<30} [{status}]"
-            )
+            print(f"  {name:<30} [{status}]")
 
     print()
 
@@ -919,14 +877,13 @@ def verify_database(conn, expected):
         print("ERROR")
         print("=" * 70)
         print("Database verification failed.")
-        raise RuntimeError(
-            "Benchmark database verification failed."
-        )
+        raise RuntimeError("Benchmark database verification failed.")
 
 
 # ============================================================
 # CLI
 # ============================================================
+
 
 def main():
     parser = argparse.ArgumentParser(
