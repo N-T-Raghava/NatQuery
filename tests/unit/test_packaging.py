@@ -13,7 +13,7 @@ tomllib = pytest.importorskip("tomllib" if sys.version_info >= (3, 11) else "tom
 
 @pytest.fixture(scope="module")
 def pyproject():
-    return tomllib.loads((ROOT / "pyproject.toml").read_text())
+    return tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
 
 def test_version_is_single_sourced(pyproject):
@@ -44,7 +44,9 @@ def test_runtime_dependencies_cover_every_third_party_import(pyproject):
     imported = set()
     for f in (ROOT / "src/natquery").rglob("*.py"):
         for m in re.finditer(
-            r"^\s*(?:from|import)\s+([A-Za-z_][\w]*)", f.read_text(), re.M
+            r"^\s*(?:from|import)\s+([A-Za-z_][\w]*)",
+            f.read_text(encoding="utf-8"),
+            re.M,
         ):
             imported.add(m.group(1))
     stdlib = set(sys.stdlib_module_names) | {"natquery"}
@@ -103,7 +105,9 @@ def test_no_module_is_orphaned():
         for p in (ROOT / "src/natquery").rglob("*.py")
         if p.name != "__init__.py"
     }
-    text = "\n".join(p.read_text() for p in (ROOT / "src/natquery").rglob("*.py"))
+    text = "\n".join(
+        p.read_text(encoding="utf-8") for p in (ROOT / "src/natquery").rglob("*.py")
+    )
     for name in names:
         short = name.rsplit(".", 1)[-1]
         parent = name.rsplit(".", 1)[0]
