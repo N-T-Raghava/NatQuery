@@ -1,0 +1,8 @@
+start calculate R-VES
+                     simple               moderate             challenging          total               
+count                148                  250                  102                  500                 
+======================================    R-VES   =====================================
+R-VES                58.46                42.92                28.70                44.62               
+===========================================================================================
+Finished R-VES evaluation for mini dev set
+

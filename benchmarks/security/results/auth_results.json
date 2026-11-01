@@ -1,0 +1,202 @@
+[
+  {
+    "test": "wrong password refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "unknown user refused with the same message as a wrong password (no user enumeration)",
+    "passed": true,
+    "detail": "('Invalid credentials, or the account is locked or disabled.', 'Invalid credentials, or the account is locked or disabled.')"
+  },
+  {
+    "test": "account locks after repeated failures, even for the correct password",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "locked-account message does not reveal the lock",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "empty and blank credentials refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "SQL-injection style username refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "forged token refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "tampered token refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "token is dead after logout",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "empty token refused",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "idle session expires",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "gail cannot pick role 'admin'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "gail cannot pick role 'sales_rep'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "linda cannot pick role 'admin'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "linda cannot pick role 'employee'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "gail cannot pick role 'root'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "gail cannot pick role 'nonexistent'",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "an employee asking normally gets the employee role",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "only admin can see generated SQL",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "role change in the user store applies to a live session immediately",
+    "passed": true,
+    "detail": "('sales_rep', [{'n': 418}])"
+  },
+  {
+    "test": "disabling an account kills its live session",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "poisoned identity attribute cannot widen a row filter",
+    "passed": true,
+    "detail": "PermissionDenied"
+  },
+  {
+    "test": "error for a hidden table is identical to the error for a table that does not exist",
+    "passed": true,
+    "detail": "{'hidden': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'absent': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'hidden-col': 'I could not turn that into a valid query for the data you have access to. Try "
+  },
+  {
+    "test": "error for a hidden column is identical to the error for a column that does not exist",
+    "passed": true,
+    "detail": "{'hidden': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'absent': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'hidden-col': 'I could not turn that into a valid query for the data you have access to. Try "
+  },
+  {
+    "test": "no user-facing error mentions SQL, table or column names",
+    "passed": true,
+    "detail": "{'hidden': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'absent': 'I could not turn that into a valid query for the data you have access to. Try rephrasing.', 'hidden-col': 'I could not turn that into a valid query for the data you have access to. Try "
+  },
+  {
+    "test": "prompt sent to the LLM for 'employee' contains no globally denied table or column",
+    "passed": true,
+    "detail": "[]"
+  },
+  {
+    "test": "prompt sent to the LLM for 'sales_rep' contains no globally denied table or column",
+    "passed": true,
+    "detail": "[]"
+  },
+  {
+    "test": "employee prompt does not mention sales tables",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "sales-rep prompt does not mention HR pay or employee tables",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "card-number pattern is redacted from results of a role that enables it, even in a computed value",
+    "passed": true,
+    "detail": "[{'c': '[REDACTED]', 'd': 'ok'}]"
+  },
+  {
+    "test": "rate limit stops a burst",
+    "passed": true,
+    "detail": "['NoneType', 'NoneType', 'RateLimitExceeded', 'RateLimitExceeded', 'RateLimitExceeded', 'RateLimitExceeded']"
+  },
+  {
+    "test": "audit chain verifies after the whole session",
+    "passed": true,
+    "detail": "(62, None)"
+  },
+  {
+    "test": "audit records exist for logins, authorised queries and denials",
+    "passed": true,
+    "detail": "{'login': 20, 'query_denied': 17, 'logout': 1, 'query_authorized': 6, 'query_completed': 6, 'query_repair': 8, 'query_failed': 4}"
+  },
+  {
+    "test": "if the audit record cannot be written, the query does not run",
+    "passed": true,
+    "detail": "('NatQueryError', {'n': 0})"
+  },
+  {
+    "test": "editing one record is detected",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "deleting one record is detected",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "reordering records is detected",
+    "passed": true,
+    "detail": ""
+  },
+  {
+    "test": "truncating the log from the end is NOT detectable by the chain alone (known limit)",
+    "passed": true,
+    "detail": "documented limitation: ship the log off-box / anchor the last hash"
+  },
+  {
+    "test": "a forger who recomputes the hash chain WITHOUT the HMAC key is not detected (known limit of the unkeyed chain)",
+    "passed": true,
+    "detail": "unkeyed detects forgery: False (expected False)"
+  },
+  {
+    "test": "with NATQUERY_AUDIT_KEY set, a forger without the key is detected",
+    "passed": true,
+    "detail": ""
+  }
+]

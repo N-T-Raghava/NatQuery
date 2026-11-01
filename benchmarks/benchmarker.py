@@ -6,8 +6,8 @@ import argparse
 import csv
 import json
 import os
-import sys
 import statistics
+import sys
 import threading
 import time
 from datetime import datetime, timezone
@@ -61,14 +61,13 @@ def connect(dsn: str, timeout: int):
 
 
 def check_schema(dsn: str, timeout: int) -> list[str]:
-    with connect(dsn, timeout) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = 'public' AND table_name = ANY(%s)",
-                (list(REQUIRED_TABLES),),
-            )
-            present = {row[0] for row in cursor.fetchall()}
+    with connect(dsn, timeout) as connection, connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'public' AND table_name = ANY(%s)",
+            (list(REQUIRED_TABLES),),
+        )
+        present = {row[0] for row in cursor.fetchall()}
     return sorted(REQUIRED_TABLES - present)
 
 
