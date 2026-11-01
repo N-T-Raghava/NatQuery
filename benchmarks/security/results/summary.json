@@ -1,0 +1,97 @@
+{
+  "hostile_sql": {
+    "distinct_queries": 227,
+    "executions": 560,
+    "passed": 560,
+    "leaks": 0,
+    "outcomes": {
+      "refused": 511,
+      "executed": 49
+    },
+    "by_category": {
+      "catalog": {
+        "n": 57,
+        "passed": 57
+      },
+      "control": {
+        "n": 8,
+        "passed": 8
+      },
+      "dangerous-function": {
+        "n": 75,
+        "passed": 75
+      },
+      "denied-data": {
+        "n": 84,
+        "passed": 84
+      },
+      "masked": {
+        "n": 15,
+        "passed": 15
+      },
+      "obfuscation": {
+        "n": 84,
+        "passed": 84
+      },
+      "outside-grant": {
+        "n": 32,
+        "passed": 32
+      },
+      "resource": {
+        "n": 14,
+        "passed": 14
+      },
+      "row-filter": {
+        "n": 35,
+        "passed": 35
+      },
+      "whole-row": {
+        "n": 66,
+        "passed": 66
+      },
+      "write-or-ddl": {
+        "n": 90,
+        "passed": 90
+      }
+    },
+    "latency_ms_p50": 6.2
+  },
+  "auth_audit": {
+    "tests": 40,
+    "passed": 40
+  },
+  "natural_language": {
+    "utility": {
+      "correct": 13,
+      "n": 18,
+      "by_role": {
+        "employee": [
+          6,
+          6
+        ],
+        "sales_rep": [
+          3,
+          6
+        ],
+        "admin": [
+          4,
+          6
+        ]
+      }
+    },
+    "attacks_natquery": {
+      "n": 30,
+      "leaked": 0,
+      "outcomes": {
+        "refused:unanswerable": 19,
+        "refused:permission": 2,
+        "executed": 5,
+        "refused:input_guard": 4
+      }
+    },
+    "attacks_unprotected": {
+      "n": 8,
+      "leaked": 7
+    }
+  }
+}

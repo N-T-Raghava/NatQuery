@@ -1,0 +1,10 @@
+{
+  "executions": 560,
+  "distinct_sql": 236,
+  "passed": 560,
+  "leaks": 0,
+  "tables_changed_by_attacks": [],
+  "audit_chain_ok": true,
+  "audit_records": 1246,
+  "wall_seconds": 6.4
+}

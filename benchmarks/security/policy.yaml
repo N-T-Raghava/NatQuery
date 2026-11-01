@@ -1,0 +1,87 @@
+# AdventureWorks security policy: three roles that mirror the ERP's student / teacher / admin split.
+version: 1
+
+defaults: {max_rows: 200, statement_timeout_ms: 8000, max_joins: 6}
+
+# Nobody, including admin, can ever read these.
+global_deny:
+  tables: [password, creditcard, personcreditcard, jobcandidate]
+  columns: ["*.passwordhash", "*.passwordsalt", "*.cardnumber", "*.nationalidnumber", "*.creditcardid", "*.creditcardapprovalcode"]
+
+redaction_patterns:
+  card_number: '\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b'
+
+roles:
+  employee:                      # like "student": sees only their own HR records plus the public catalogue
+    priority: 10
+    description: An employee sees their own HR record, pay history and department history, plus the product catalogue.
+    limits: {max_rows: 100}
+    redact: [card_number]
+    tables:
+      employee:
+        columns: [businessentityid, loginid, jobtitle, birthdate, maritalstatus, gender, hiredate, vacationhours, sickleavehours, salariedflag, currentflag]
+        row_filter: "businessentityid = :be_id"
+      employeepayhistory:
+        columns: [businessentityid, ratechangedate, rate, payfrequency]
+        row_filter: "businessentityid = :be_id"
+      employeedepartmenthistory:
+        columns: [businessentityid, departmentid, shiftid, startdate, enddate]
+        row_filter: "businessentityid = :be_id"
+      person:
+        columns: [businessentityid, title, firstname, middlename, lastname]
+        row_filter: "businessentityid = :be_id"
+      emailaddress:
+        columns: [businessentityid, emailaddress]
+        row_filter: "businessentityid = :be_id"
+      department: {columns: "*"}
+      shift: {columns: "*"}
+      product:
+        columns: [productid, name, productnumber, color, size, weight, listprice, productline, class, style, productsubcategoryid, productmodelid, sellstartdate, sellenddate, discontinueddate]
+      productcategory: {columns: [productcategoryid, name]}
+      productsubcategory: {columns: [productsubcategoryid, productcategoryid, name]}
+
+  sales_rep:                     # like "teacher": sees only their own orders and the customers on them
+    priority: 20
+    description: A sales representative sees their own orders, those customers, their own quota, and the product catalogue.
+    limits: {max_rows: 300}
+    redact: [card_number]
+    tables:
+      salesorderheader:
+        columns: [salesorderid, revisionnumber, orderdate, duedate, shipdate, status, onlineorderflag, purchaseordernumber, accountnumber, customerid, salespersonid, territoryid, billtoaddressid, shiptoaddressid, shipmethodid, subtotal, taxamt, freight, totaldue]
+        row_filter: "salespersonid = :be_id"
+      salesorderdetail:
+        columns: [salesorderid, salesorderdetailid, carriertrackingnumber, orderqty, productid, specialofferid, unitprice, unitpricediscount]
+        row_filter: "salesorderid IN (SELECT salesorderid FROM salesorderheader WHERE salespersonid = :be_id)"
+      customer:
+        columns: [customerid, personid, storeid, territoryid]
+        row_filter: "customerid IN (SELECT customerid FROM salesorderheader WHERE salespersonid = :be_id)"
+      person:
+        columns: [businessentityid, title, firstname, middlename, lastname, emailpromotion]
+        row_filter: "businessentityid IN (SELECT personid FROM customer WHERE customerid IN (SELECT customerid FROM salesorderheader WHERE salespersonid = :be_id))"
+      emailaddress:
+        columns: [businessentityid, emailaddress]
+        masked: {emailaddress: email}
+        row_filter: "businessentityid IN (SELECT personid FROM customer WHERE customerid IN (SELECT customerid FROM salesorderheader WHERE salespersonid = :be_id))"
+      store:
+        columns: [businessentityid, name, salespersonid]
+        row_filter: "salespersonid = :be_id"
+      salesperson:
+        columns: [businessentityid, territoryid, salesquota, bonus, commissionpct, salesytd, saleslastyear]
+        row_filter: "businessentityid = :be_id"
+      salespersonquotahistory:
+        columns: [businessentityid, quotadate, salesquota]
+        row_filter: "businessentityid = :be_id"
+      salesterritory: {columns: [territoryid, name, countryregioncode, group]}
+      product:
+        columns: [productid, name, productnumber, color, size, weight, listprice, productline, class, style, productsubcategoryid, productmodelid, sellstartdate, sellenddate, discontinueddate]
+      productcategory: {columns: [productcategoryid, name]}
+      productsubcategory: {columns: [productsubcategoryid, productcategoryid, name]}
+      specialoffer: {columns: "*"}
+
+  admin:                         # everything except the globally denied data
+    priority: 100
+    description: Administrator. All tables and columns except the globally denied ones.
+    permissions: {can_view_sql: true, can_view_plan: true, can_manage_users: true, can_view_audit: true, can_refresh_schema: true}
+    limits: {max_rows: 1000, max_joins: 8}
+    tables:
+      "*": {columns: "*"}

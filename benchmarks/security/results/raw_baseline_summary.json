@@ -1,0 +1,8 @@
+{
+  "completed": 141,
+  "returned_rows": 133,
+  "returned_secret_data": 47,
+  "failed_in_database": 46,
+  "skipped": 5,
+  "must_refuse_queries": 192
+}
