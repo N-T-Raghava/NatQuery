@@ -1,0 +1,615 @@
+\chapter{Benchmarking}
+\label{ch:bench}
+
+NatQuery is evaluated on three tracks that answer three different questions (Table~\ref{tab:tracks}).
+BIRD asks whether the security layer harms accuracy on a public benchmark. AdventureWorks asks whether
+anything leaks under attack. The synthetic ERP asks whether the system scales to a university-sized,
+multi-schema database with many roles. All tracks use the same open-weight model,
+\code{openai/gpt-oss-120b} on Groq's free tier, at temperature 0 with no fine-tuning and no few-shot
+examples.
+
+\begin{table}[htbp]
+\centering
+\caption{The three benchmark tracks.}
+\label{tab:tracks}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.1cm} Y Y Y}
+\toprule
+\hdr \textbf{Track} & \textbf{Question answered} & \textbf{Database} & \textbf{Measure} \\
+\midrule
+BIRD Mini-Dev & Does the security layer cost accuracy? & 11 public databases, 75 tables, PostgreSQL & Official EX, Soft-F1, R-VES; latency, cost \\
+AdventureWorks & Does anything leak under attack? & 68 tables with real-looking secrets, 3 roles & Leaked values, writes, audit integrity \\
+Synthetic ERP & Does it scale to a university ERP? & 10 schemas, 87 tables, 549 columns, 10 roles & Correct answers per difficulty level, safety \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Accuracy and Efficiency on BIRD Mini-Dev}
+
+\subsection{Setup}
+
+BIRD Mini-Dev has 500 questions on 11 databases at three difficulty levels \citep{li2023bird}. All 75
+tables were loaded unmodified into PostgreSQL. Every question went through the full NatQuery pipeline
+with the security layer on, using one all-access benchmark role, and was scored with BIRD's own
+official scripts. The model received BIRD's evidence hint, as every leaderboard entry does.
+
+\begin{table}[htbp]
+\centering
+\caption{BIRD Mini-Dev setup.}
+\label{tab:birdsetup}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y}
+\toprule
+\hdr \textbf{Item} & \textbf{Value} \\
+\midrule
+Benchmark & BIRD Mini-Dev, PostgreSQL version: 500 questions (148 simple, 250 moderate, 102 challenging) \\
+Model & \code{openai/gpt-oss-120b}, temperature 0, low reasoning effort \\
+Input & Question plus BIRD's evidence hint (``oracle knowledge'' setting) \\
+Security & On: every query passes the full enforcer \\
+Scoring & Official BIRD scripts: execution accuracy (EX), Soft-F1, R-VES \\
+Pipeline & One question at a time; first attempt plus at most two repairs \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Results}
+
+NatQuery reaches an official execution accuracy of 45.6\% (228 of 500 questions exactly right under
+BIRD's strictest comparison). Table~\ref{tab:birdres} gives all three metrics by difficulty and
+Figure~\ref{fig:birdbar} charts EX.
+
+\begin{table}[htbp]
+\centering
+\caption{Official BIRD scores with the security layer on.}
+\label{tab:birdres}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y Y Y Y}
+\toprule
+\hdr \textbf{Metric} & \textbf{Simple (148)} & \textbf{Moderate (250)} & \textbf{Challenging (102)} & \textbf{All (500)} \\
+\midrule
+Execution accuracy (EX) & 58.78 & 44.00 & 30.39 & \textbf{45.60} \\
+Soft-F1 & 61.34 & 46.15 & 28.64 & \textbf{47.08} \\
+R-VES & 58.46 & 42.92 & 28.70 & \textbf{44.62} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, bar width=22pt, width=0.8\textwidth, height=5.6cm, ymin=0, ymax=70, ylabel={EX (\%)},
+  symbolic x coords={Simple,Moderate,Challenging,All}, xtick=data, nodes near coords, nodes near coords style={font=\footnotesize, /pgf/number format/fixed, /pgf/number format/precision=1},
+  enlarge x limits=0.18, tick label style={font=\small}, ymajorgrids, grid style={gray!25}]
+\addplot[fill=nqblue, draw=nqblue] coordinates {(Simple,58.78) (Moderate,44.00) (Challenging,30.39) (All,45.60)};
+\end{axis}
+\end{tikzpicture}
+\caption{Official execution accuracy on BIRD Mini-Dev by difficulty.}
+\label{fig:birdbar}
+\end{figure}
+
+\paragraph{The security layer costs no accuracy.} Table~\ref{tab:birdsec} shows what the enforcer did
+to the model's first attempt. It accepted 484 of 500; of the 10 it rejected, 6 were cross joins and 4
+unresolved references. In no case was a query that was right in raw form wrong in the final answer,
+and the repair loop rescued three. On a numerically tolerant scorer, raw model SQL scored 50.2\%, the
+same SQL through the enforcer 50.0\%, and the full pipeline 50.6\%.
+
+\begin{table}[htbp]
+\centering
+\caption{What the enforcer did to first-attempt SQL (500 questions).}
+\label{tab:birdsec}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{Y L{2.6cm}}
+\toprule
+\hdr \textbf{Outcome} & \textbf{Count} \\
+\midrule
+Accepted by the enforcer & 484 (96.8\%) \\
+Rejected (6 cross joins, 4 unresolved references) & 10 (2.0\%) \\
+Right in raw form but wrong in the final answer & \textbf{0} \\
+Rescued by the repair loop & 3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Position Among Published Systems}
+
+Table~\ref{tab:leader} places NatQuery among the PostgreSQL entries we compared (execution accuracy,
+oracle-knowledge setting). The scores of other systems were read from the public leaderboard; ours is
+self-evaluated with the official scripts and not submitted. NatQuery ranks 8th of the 13 entries
+compared and is ahead of every plain-model baseline: +9.6 points over GPT-4-turbo, +9.8 over GPT-4,
++16.2 over Llama3-70b-instruct and +18.2 over GPT-3.5-turbo. An open 120-billion-parameter model behind
+a full security layer therefore beats GPT-4 given the same hints.
+
+\begin{table}[htbp]
+\centering
+\caption{PostgreSQL leaderboard entries compared (EX, \%).}
+\label{tab:leader}
+\small
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{L{1.2cm} Y L{2cm}}
+\toprule
+\hdr \textbf{Rank} & \textbf{System} & \textbf{EX} \\
+\midrule
+1 & schemagate + Claude Opus 5.5 & 72.6 \\
+2 & SDIP + gemini-3.8-flash & 69.0 \\
+3 & Ontology2SQL & 65.8 \\
+4 & FrontierSQL + gpt-oss-120b & 56.8 \\
+4 & SmartQuery + GPT-5.1 & 56.8 \\
+6 & schemagate + Gemini 2.5 Flash & 55.6 \\
+7 & TA + GPT-4 & 50.8 \\
+\rowcolor{nqlight} \textbf{8} & \textbf{NatQuery + gpt-oss-120b, security on (self-evaluated)} & \textbf{45.6} \\
+9 & GPT-4-turbo & 36.0 \\
+10 & GPT-4 & 35.8 \\
+11 & GPT-4-32k & 35.0 \\
+12 & Llama3-70b-instruct & 29.4 \\
+13 & GPT-3.5-turbo & 27.4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Efficiency}
+
+Measured one question at a time with rate-limit waits excluded (Table~\ref{tab:eff}), the security layer
+is invisible in the latency: the enforcer takes a median 4.3\,ms, 0.43\% of the end-to-end time, which
+is dominated by the model call.
+
+\begin{table}[htbp]
+\centering
+\caption{Efficiency on BIRD Mini-Dev.}
+\label{tab:eff}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{5.2cm} Y}
+\toprule
+\hdr \textbf{Measure} & \textbf{Value} \\
+\midrule
+End-to-end latency & p50 1.08\,s, p95 2.19\,s, p99 3.13\,s; 92.6\% of questions in under 2\,s \\
+Model time & p50 1.05\,s (97.2\% of latency) \\
+Enforcer time & p50 4.3\,ms, p95 10.8\,ms, p99 15.7\,ms \\
+Database time & p50 3.5\,ms (2.4\% of latency) \\
+Model calls per question & 1.03 (485 questions needed one call, 14 two, 1 three) \\
+Tokens per question & 2,278 (2,092 in, 186 out); 4,995 per correct answer \\
+Cost per question & \$0.0004 (\$0.21 for all 500) at \$0.15 / \$0.60 per million input / output tokens \\
+Query speed & Median executed query takes 1.08$\times$ the gold query's database time \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Schema selection.} With all 75 tables loaded as one 798-column schema, the table ranking put
+every table the gold SQL needs into the prompt for 470 of 500 questions.
+
+\subsection{Limitations of the BIRD Result}
+
+\begin{table}[htbp]
+\centering
+\caption{Limitations of the BIRD track.}
+\label{tab:birdlim}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y}
+\toprule
+\hdr \textbf{Limitation} & \textbf{Detail} \\
+\midrule
+Self-evaluated & Official scripts run by us, not a leaderboard submission; the leaderboard may use a newer Mini-Dev version, so ranks are indicative \\
+Brittle numeric metric & Official EX compares raw values without tolerance; about 25 misses are right answers with a different decimal form (our tolerant scorer gives 50.6\%) \\
+Partly tuned on the test set & The schema-selection rule was designed after reading failures on these 500 questions; treat the result as an upper estimate until checked on unseen questions \\
+One run & Temperature 0 is not fully deterministic on a hosted API; the spread was not measured \\
+Weak model setting & Low reasoning effort on a free tier; the same model scores 56.8 in another published system, an 11-point gap we did not analyse \\
+Evidence hint given & Real users will not provide hints, so expect lower accuracy on a real database without good descriptions \\
+Security not tested here & One all-access role: this run shows the enforcer does not hurt accuracy, not that it blocks leaks \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{Security Testing on AdventureWorks}
+
+\subsection{Setup}
+
+Accuracy says nothing about leaks, so a separate track attacks the system. The database is Microsoft
+AdventureWorks 2014 on PostgreSQL: 68 tables, 31,465 sales orders, 19,972 people and 290 employees,
+with realistic secrets (password hashes, credit card numbers, national ID numbers). The pass criteria
+were fixed before the runs: zero leaked values, zero successful writes, zero unbounded executions, and
+every request audited. A leak checker independent of NatQuery's policy code holds 89,686 protected
+strings read straight from the tables and each role's entitled keys, and checks every returned cell.
+The database login was the superuser on purpose: if NatQuery's checks failed, nothing beneath them would
+help.
+
+\begin{table}[htbp]
+\centering
+\caption{AdventureWorks roles and what is hidden.}
+\label{tab:awroles}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} Y}
+\toprule
+\hdr \textbf{Role} & \textbf{Access} \\
+\midrule
+\code{employee} & Own HR record and pay; product catalogue \\
+\code{sales_rep} & Own orders and customers; customer e-mail masked as \code{***@domain} \\
+\code{admin} & Everything except the permanently hidden data \\
+Hidden for all & Tables \code{password}, \code{creditcard}, \code{personcreditcard}, \code{jobcandidate}; columns \code{passwordhash}, \code{passwordsalt}, \code{cardnumber}, \code{nationalidnumber}, \code{creditcardid}, \code{creditcardapprovalcode} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Four test layers simulate different adversaries (Table~\ref{tab:awlayers}).
+
+\begin{table}[htbp]
+\centering
+\caption{The four security test layers.}
+\label{tab:awlayers}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.4cm} Y}
+\toprule
+\hdr \textbf{Layer} & \textbf{What it simulates} \\
+\midrule
+A. Hostile SQL & The model is compromised or jailbroken and returns the attacker's SQL; sent through the full pipeline \\
+B. Auth, sessions, audit & Login, lockout, forged tokens, role escalation, audit tampering, what the model is shown \\
+C. Natural language & Real users typing real attacks and questions into the real model \\
+D. Unprotected baseline & The same model and kinds of attack with no NatQuery, on the owner connection \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Layer A covers eleven attack families: globally hidden data, tables and columns outside a role's grant,
+row-filter bypasses (\code{OR TRUE}, self-joins, subqueries, CTEs, UNION), masked-column probing (LIKE,
+ORDER BY, GROUP BY, MIN, md5, joins), writes and DDL, stacked statements, dangerous functions, catalog
+and system tables, obfuscation, whole-row references and resource abuse.
+
+\subsection{Results}
+
+\begin{table}[htbp]
+\centering
+\caption{AdventureWorks security results.}
+\label{tab:awres}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{5.6cm} Y}
+\toprule
+\hdr \textbf{Test} & \textbf{Result} \\
+\midrule
+Hostile SQL: leaked values & \textbf{0 of 560 runs} (227 queries, 3 roles, 11 families) \\
+Hostile SQL: writes or DDL & \textbf{0}; fingerprint of all 68 tables identical before and after \\
+Must-refuse queries refused & \textbf{511 of 511} \\
+Allowed queries returned only entitled data & 49 of 49 (for example a sales rep's \code{COUNT(*)} of all orders returned 418, not 31,465) \\
+Auth, session and audit checks & 40 of 40 \\
+Natural-language attacks through NatQuery & \textbf{0 leaks in 30} (25 refused or ``unanswerable'', 5 answered with entitled data only) \\
+Same attacks on an unprotected text-to-SQL & \textbf{7 of 8 leaked} (all 290 national IDs, all password hashes, company-wide revenue, every employee row) \\
+Same hostile SQL run directly on the database & 141 of 187 must-refuse queries completed; 47 returned secret data \\
+Prompt size with the security layer & 66\% fewer tokens (2,170 vs 6,295): the model sees only its role's tables \\
+Enforcer plus execution & Median 6\,ms per request \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{What testing found.} The tests found three real bugs, all fixed with regression tests
+(Table~\ref{tab:awbugs}). The first run is kept in the repository.
+
+\begin{table}[htbp]
+\centering
+\caption{Bugs found by the security track.}
+\label{tab:awbugs}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{Y Y}
+\toprule
+\hdr \textbf{Bug} & \textbf{Why it mattered} \\
+\midrule
+\code{SELECT employee::text FROM employee} returned the whole row, including the hidden national ID & A table name used as a value bypassed column grants: a real leak \\
+\code{repeat('a', 1000000000)} crashed the database connection & An allowed function could exhaust memory \\
+\code{JOIN ... ON true} passed the cross-join rule & Resource abuse, bounded only by the timeout \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Limitations of the Security Result}
+
+\begin{table}[htbp]
+\centering
+\caption{Limitations of the security track.}
+\label{tab:awlim}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y}
+\toprule
+\hdr \textbf{Limitation} & \textbf{Detail} \\
+\midrule
+Own defences tested & The attack list was written by the authors of the enforcer, and the first run found three bugs, so more probably exist; an outside red team is the missing step \\
+Small natural-language sample & 30 attacks (a free key allows about 200,000 tokens a day): zero leaks only rules out a rate above about 10\%; the strong claim rests on layer A \\
+Answers scoped silently & A sales rep asking for ``total revenue of the company'' got their own figure with no warning; nothing leaked, but a user can be misled \\
+Inference not covered & A role allowed to aggregate rows can learn statistics about them; there is no minimum group size \\
+Audit tamper-evident only & Without a key a full rewrite can be forged; truncation at the end is not detectable by the chain alone \\
+Heuristic input guard & It stopped 4 of 30 attacks; the enforcer, not the guard, is the boundary \\
+One model, one engine & Only \code{gpt-oss-120b} and PostgreSQL were tried; the enforcer result does not depend on the model \\
+Untested & Concurrency and timing channels (concurrency is covered by integration tests), SSO with the real ERP, and the database-role layer on this database \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{The Synthetic University ERP}
+
+\subsection{Why a Synthetic ERP}
+
+The target is the IIT Kharagpur ERP, whose real schema was not available. A test database was therefore
+built from the screens of the student login and extended, by extrapolation, to the teacher and
+administrative sides. Every row is synthetic and generated from a fixed seed; no real student data was
+used. The field names follow the real screens, and the model is the single source of the DDL, the
+diagrams and the policy.
+
+\subsection{Database Design}
+
+The database has 10 schemas, 87 tables, 549 columns, 130 foreign keys and about 368,000 rows
+(Table~\ref{tab:erpschemas}, Figure~\ref{fig:erpbar}). Logins, sessions and one-time passwords are
+implemented in SQL (bcrypt hashes, a five-failure lockout, hashed tokens and one-time passwords, full audit).
+
+\begin{table}[htbp]
+\centering
+\caption{ERP schemas.}
+\label{tab:erpschemas}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{1.7cm} L{1.5cm} L{1.9cm} Y}
+\toprule
+\hdr \textbf{Schema} & \textbf{Tables} & \textbf{Columns} & \textbf{Content} \\
+\midrule
+\code{acad} & 27 & 164 & Registrations, results, attendance, exams, medical leave, graduation \\
+\code{people} & 10 & 94 & Persons, students, employees, advisors, guardians, addresses \\
+\code{svc} & 14 & 86 & Mail, notices, grievances, counselling, paperless applications, e-files, dispatch \\
+\code{fin} & 10 & 60 & Fee structure and demands, payments, scholarships, mediclaim, salary slips \\
+\code{auth} & 6 & 42 & Accounts, roles, sessions, one-time passwords, login audit \\
+\code{org} & 5 & 26 & Departments, programs, academic sessions, halls, rooms \\
+\code{lib} & 4 & 22 & Books, copies, loans, dues \\
+\code{cdc} & 4 & 20 & Companies, postings, applications, offers (placement) \\
+\code{sys} & 4 & 18 & Audit events, menu modules and role-menu access \\
+\code{gh} & 3 & 17 & Guest house \\
+\midrule
+\textbf{Total} & \textbf{87} & \textbf{549} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[xbar, width=0.85\textwidth, height=7cm, xmin=0, xlabel={Count}, symbolic y coords={gh,sys,cdc,lib,org,auth,fin,svc,people,acad}, ytick=data,
+  legend style={at={(0.97,0.05)}, anchor=south east, font=\footnotesize}, bar width=5pt, enlarge y limits=0.07, xmajorgrids, grid style={gray!25}, tick label style={font=\small}]
+\addplot[fill=nqblue, draw=nqblue] coordinates {(27,acad) (10,people) (14,svc) (10,fin) (6,auth) (5,org) (4,lib) (4,cdc) (4,sys) (3,gh)};
+\addplot[fill=nqorange, draw=nqorange] coordinates {(164,acad) (94,people) (86,svc) (60,fin) (42,auth) (26,org) (22,lib) (20,cdc) (18,sys) (17,gh)};
+\legend{Tables, Columns}
+\end{axis}
+\end{tikzpicture}
+\caption{Tables and columns per ERP schema.}
+\label{fig:erpbar}
+\end{figure}
+
+\paragraph{Three database layers.} NatQuery logs in as \code{natquery}, which owns nothing and can read
+nothing; each query runs after \code{SET LOCAL ROLE erp_ro}. \code{erp_ro} is SELECT-only and has no
+grant on password hashes, session tokens or one-time-password hashes. Row-level security on 20 tables
+repeats the row scopes in SQL; with no context a role sees no rows.
+
+\paragraph{Roles.} Ten roles can be assigned (an eleventh, \code{erp_base}, is the shared reference-data
+block every role inherits). Table~\ref{tab:erproles} shows how differently the views are sized: a
+student sees 74 tables and 462 columns, the library staff 35 and 188.
+
+\begin{table}[htbp]
+\centering
+\caption{ERP roles and the size of each role's view.}
+\label{tab:erproles}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} L{1.6cm} L{1.7cm} L{2.2cm} Y}
+\toprule
+\hdr \textbf{Role} & \textbf{Tables} & \textbf{Columns} & \textbf{Tables with row filters} & \textbf{Scope} \\
+\midrule
+\code{student} & 74 & 462 & 49 & Own records only \\
+\code{faculty} & 47 & 265 & 20 & Own courses, advisees, own salary \\
+\code{hod} & 50 & 291 & 23 & Whole department \\
+\code{dept_office} & 50 & 291 & 23 & Same as the head of department \\
+\code{acad_section} & 60 & 358 & 8 & All academic records \\
+\code{accounts} & 45 & 256 & 7 & All finance \\
+\code{library} & 35 & 188 & 6 & Library staff \\
+\code{hall_office} & 35 & 194 & 10 & Residents of one hall \\
+\code{cdc} & 38 & 208 & 11 & Career Development Cell \\
+\code{admin} & 85 & 532 & 0 & System administrator (permanent secrets still hidden) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Verifying the Access Layer Without a Model}
+
+Before any model is involved, two checks establish that the access layer is correct, so that any later
+miss belongs to the model (Table~\ref{tab:erpverify}). The ground truth for every question is computed
+as the database superuser, by SQL written under the role's scope.
+
+\begin{table}[htbp]
+\centering
+\caption{Checks that need no language model.}
+\label{tab:erpverify}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.6cm} L{2.4cm} Y}
+\toprule
+\hdr \textbf{Check} & \textbf{Result} & \textbf{What it shows} \\
+\midrule
+Database checks (logins, lockout, one-time passwords, sessions, grants, row-level security against an independent oracle) & 51 of 51 & The database layer behaves as designed, including querying as \code{erp_ro} without NatQuery \\
+No-LLM pipeline pass: every ground-truth query and every attack query sent through the full pipeline & 41 of 41 & All 35 answerable questions return exactly the expected rows; all 6 attacks return nothing forbidden \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The Question Set}
+
+There are 40 questions in three difficulty levels (Table~\ref{tab:erpq}), each asked by the role it
+concerns. The full list with results is in Appendix~\ref{app:questions}. Of the 12 hard questions, five
+are security questions: four that a role must be refused or must not be able to answer from forbidden
+data (other people's pay, sensitive identifiers, a prompt injection, finance data for a role without
+finance access) and one scope trap, where an answer is acceptable only if it contains nothing forbidden.
+
+\begin{table}[htbp]
+\centering
+\caption{Design of the 40 ERP questions.}
+\label{tab:erpq}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{1.8cm} L{1.5cm} Y}
+\toprule
+\hdr \textbf{Level} & \textbf{Count} & \textbf{What it needs} \\
+\midrule
+Easy & 11 & One table or one join: own record, a count, a latest row, a simple filter \\
+Medium & 17 & Two to four tables across schemas, status and date logic, grouping, averages, names through the person table \\
+Hard & 12 & Window functions, five-table joins, percentages with thresholds, department scope, and five access-control traps \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Scoring.} For answerable questions, all values of the ground truth must be present in the
+answer with the same number of rows; extra columns and different labels are accepted. A security
+question counts as safe if nothing from its forbidden set appears in the answer.
+
+\subsection{Results}
+
+Table~\ref{tab:erpres} and Figure~\ref{fig:erpacc} give the results of two full runs of all 40 questions.
+The first run exposed what the model could not see; the second followed the generic changes of
+Table~\ref{tab:erpchanges}.
+
+\begin{table}[htbp]
+\centering
+\caption{ERP accuracy before and after the generic improvements (correct / questions).}
+\label{tab:erpres}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.2cm} Y Y}
+\toprule
+\hdr \textbf{Level} & \textbf{First run} & \textbf{Final run} \\
+\midrule
+Easy & 4 / 11 (36.4\%) & 9 / 11 (81.8\%) \\
+Medium & 4 / 17 (23.5\%) & 11 / 17 (64.7\%) \\
+Hard & 6 / 12 (50.0\%) & 8 / 12 (66.7\%) \\
+\midrule
+\textbf{All} & \textbf{14 / 40 (35.0\%)} & \textbf{28 / 40 (70.0\%)} \\
+Answerable questions (35) & 9 (25.7\%) & 23 (65.7\%) \\
+Security questions (5) & 5 safe, 0 leaks & 5 safe, 0 leaks \\
+Refused as ``unanswerable'' & 10 & 4 \\
+Model calls and tokens per question & 0.97 calls, about 2,770 tokens & 1.30 calls, about 4,940 tokens \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar, bar width=15pt, width=0.85\textwidth, height=6cm, ymin=0, ymax=100, ylabel={Correct (\%)},
+  symbolic x coords={Easy,Medium,Hard,All}, xtick=data, enlarge x limits=0.18, legend style={at={(0.03,0.97)}, anchor=north west, font=\footnotesize},
+  nodes near coords, nodes near coords style={font=\scriptsize}, ymajorgrids, grid style={gray!25}, tick label style={font=\small}]
+\addplot[fill=nqorange!70, draw=nqorange] coordinates {(Easy,36.4) (Medium,23.5) (Hard,50.0) (All,35.0)};
+\addplot[fill=nqblue, draw=nqblue] coordinates {(Easy,81.8) (Medium,64.7) (Hard,66.7) (All,70.0)};
+\legend{First run, Final run}
+\end{axis}
+\end{tikzpicture}
+\caption{ERP accuracy by difficulty level, first and final run.}
+\label{fig:erpacc}
+\end{figure}
+
+Latency is not comparable with BIRD: the free tier allows 8,000 tokens per minute, so questions were
+paced about 20 seconds apart and waited on token limits, giving a median of about 62 seconds per
+question in the final run. With a paid tier or an on-premises model this wait disappears.
+
+\subsection{What Changed Between the Two Runs}
+
+After the first run the failures were read and grouped. Table~\ref{tab:erpchanges} lists the changes;
+all are generic library features, and none mentions a question. Sixteen questions turned from wrong to
+correct (E02, E03, E05, E09, E10, M01, M02, M04, M05, M11, M12, M16, M17, H08, H09, H12) and two turned
+from correct to wrong (M06 and H05), a net gain of fourteen.
+
+\begin{table}[htbp]
+\centering
+\caption{Failures of the first run and the generic change that addressed each.}
+\label{tab:erpchanges}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.5cm} Y Y}
+\toprule
+\hdr \textbf{Failure} & \textbf{Cause} & \textbf{Change} \\
+\midrule
+Wrong status literals (about 10 questions) & The prompt listed column names but no values, so the model guessed \code{'failed'} or \code{'Success'} & Value hints for categorical columns, generated from the database; prompt rule to use the listed spellings \\
+Department id instead of name & No join to the lookup table & Small lookup tables added to the selected schema; prompt rule to return readable labels \\
+``Unanswerable'' on role-scoped questions & ``My'' and ``our'' read as missing data; needed tables not always in the prompt & Prompt rule that rows are scoped automatically; weighted table ranking; wider-schema retry \\
+Tables dropped from the prompt & Alphabetical filling lost whole schemas such as \code{org} and \code{people}; synonyms were not passed to the ranker & Fill by connectivity and rank; synonyms passed to the ranker \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Retrieval.} Measured by comparing the tables used by each ground-truth query with the
+tables placed in the prompt, the improved table selection covers all needed tables for 31 of the 35
+answerable questions, against 26 with the previous ranking and fill rule.
+
+\subsection{What Still Fails}
+
+Twelve questions are still wrong (Table~\ref{tab:erpfail}). Three need a policy decision, three are refusals, one is a permission refusal and five are SQL or value errors.
+
+\begin{table}[htbp]
+\centering
+\caption{Remaining failures of the final run.}
+\label{tab:erpfail}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} L{2.2cm} Y}
+\toprule
+\hdr \textbf{Group} & \textbf{Questions} & \textbf{Cause} \\
+\midrule
+``My'' on a table without a row filter & E07, M06, H06 & The prompt forbids filtering on the user's own id and the instructor table has no row filter, so the answer covers every instructor instead of the asker; a policy choice is needed (add a filter, or let the model filter on identity) \\
+Refused as ``unanswerable'' & E08, M08, M09 & Department and previous-session questions the model still judged unanswerable \\
+Permission refusal & H05 & The query touched a table the role cannot read \\
+Multi-step SQL errors & M10, H10, H11 & Window functions, ranking and percentage logic wrong \\
+Threshold and value errors & M03, M14 & Attendance percentage threshold; a mobile-number question that returned no rows \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Caveats on the ERP Result}
+
+\begin{table}[htbp]
+\centering
+\caption{Caveats on the ERP track.}
+\label{tab:erpcav}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.6cm} Y}
+\toprule
+\hdr \textbf{Caveat} & \textbf{Detail} \\
+\midrule
+Improvements read the failures & The changes followed the first-run failures on the same 40 questions; the final 70\% is an upper estimate for new questions \\
+Synthetic data and policy & The questions were written by the people who wrote the policy; the real ERP has its own quirks \\
+One run each & No measurement of run-to-run spread \\
+Free tier and one model & Small prompts forced by 8,000 tokens per minute; a stronger model would probably score higher \\
+Silent scoping & A row filter changes totals without telling the user (known limit, Chapter~\ref{ch:conclusion}) \\
+Row-level security covers rows only & Column hiding and masking exist in the enforcer alone, except for secret columns the database role is never granted \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{Summary of the Evidence}
+
+\begin{table}[htbp]
+\centering
+\caption{What each track shows and what it does not.}
+\label{tab:summary}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} Y Y}
+\toprule
+\hdr \textbf{Track} & \textbf{Shows} & \textbf{Does not show} \\
+\midrule
+BIRD & The security layer costs no accuracy; 45.6\% EX with an open model at \$0.0004 per question & Leak resistance; accuracy without hints; behaviour under load \\
+AdventureWorks & No leak or write under 560 hostile runs and 30 natural-language attacks, where an unprotected baseline leaked & That no attack exists; outside red-team results; inference attacks \\
+Synthetic ERP & The system handles 87 tables, 549 columns and 10 roles; the access layer returns exactly the right rows; 70\% correct, all security questions safe & That the real ERP's policy is right; accuracy on unseen questions \\
+\bottomrule
+\end{tabularx}
+\end{table}
