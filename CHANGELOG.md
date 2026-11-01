@@ -1,10 +1,10 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to NatQuery are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [2.0.0] - 2026-11-02
+## [2.0.0] - 2026-11-01
 
 NatQuery 2.0.0 turns the 1.x prototype into a governed, auditable natural-language
 interface for PostgreSQL. The LLM only ever *proposes* SQL; a deterministic enforcement
