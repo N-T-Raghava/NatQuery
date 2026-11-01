@@ -1,0 +1,261 @@
+{
+ "passed": 51,
+ "total": 51,
+ "checks": [
+  {
+   "check": "login with the right password returns a session",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "session carries the student role",
+   "ok": true,
+   "detail": "['student']"
+  },
+  {
+   "check": "stored session is a SHA-256 hash, not the token",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "verify_session accepts the token",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "verify_session rejects a forged token",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "logout kills the session",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "wrong password and unknown user both return nothing",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "five failures lock the account",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "a locked account refuses even the right password",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "every attempt is audited",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "OTP is stored hashed",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "wrong OTP rejected, right OTP accepted once",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "OTP cannot be reused",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "weak new password refused",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "passwords are bcrypt",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "disabled account cannot log in",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "one person can hold two logins (Switch Login)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_ro cannot read password hashes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_ro cannot read OTP hashes",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_ro cannot read session tokens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_ro can read the non-secret account columns",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_ro cannot write",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "natquery login alone has no table access",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "natquery cannot become erp_owner or erp_app",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_app has no direct access to auth.account (only the functions)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "erp_app sees all rows (its own allow-all RLS policy)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "no request context -> no rows at all",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees exactly one student row (own)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees only own registrations",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees only own results",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees only own payments",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student cannot see anyone else's row by id",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees no salary slips",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees only own person row",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "student sees no guardians of others",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "a forged student_id in the context only ever shows that one student",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "faculty sees advisees plus own course students",
+   "ok": true,
+   "detail": "11"
+  },
+  {
+   "check": "faculty sees only own salary",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "faculty cannot see payments or bank accounts of students",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "HoD sees exactly the department's students",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "HoD sees only the department's registrations",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "HoD sees no fee payments",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "accounts sees every payment and salary slip",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "accounts sees no academic results",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "academic section sees all students and results, no bank accounts or payments",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "hall office sees only its residents",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "library sees all loans but no results, payments or bank accounts",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "CDC sees only students who applied for jobs",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "admin sees everything",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "an unknown role name sees nothing",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "check": "a role name with SQL in it is just a string",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

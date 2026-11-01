@@ -1,0 +1,64 @@
+erDiagram
+  otp {
+    bigserial otp_id PK
+    int account_id FK
+    varchar purpose
+    text otp_hash
+    timestamptz expires_at
+    timestamptz used_at
+  }
+  account_role {
+    serial account_role_id PK
+    int account_id FK
+    int role_id FK
+    varchar scope_type
+    int scope_id
+    date valid_from
+    date valid_to
+  }
+  login_audit {
+    bigserial audit_id PK
+    int account_id FK
+    varchar login_id_tried
+    varchar event
+    inet ip_addr
+    text user_agent
+    timestamptz at
+  }
+  account {
+    serial account_id PK
+    varchar login_id UK
+    int person_id FK
+    varchar account_type
+    text password_hash
+    text passphrase_hash
+    text campus_net_password_hash
+    varchar status
+    smallint failed_attempts
+    timestamptz locked_until
+    timestamptz last_login_at
+    timestamptz created_at
+  }
+  role {
+    serial role_id PK
+    varchar role_code UK
+    text description
+    smallint priority
+  }
+  person {
+    serial person_id PK
+  }
+  session {
+    bigserial session_id PK
+    int account_id FK
+    text token_hash
+    timestamptz created_at
+    timestamptz expires_at
+    inet ip_addr
+  }
+  account o|--o{ login_audit : "account_id"
+  account ||--o{ account_role : "account_id"
+  account ||--o{ otp : "account_id"
+  account ||--o{ session : "account_id"
+  person ||--o{ account : "person_id"
+  role ||--o{ account_role : "role_id"

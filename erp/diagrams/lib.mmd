@@ -1,0 +1,39 @@
+erDiagram
+  person {
+    serial person_id PK
+  }
+  book {
+    serial book_id PK
+    varchar isbn
+    text title
+    text author
+    text publisher
+    varchar category
+  }
+  book_copy {
+    serial copy_id PK
+    int book_id FK
+    varchar accession_no UK
+    varchar status
+  }
+  loan {
+    serial loan_id PK
+    int copy_id FK
+    int person_id FK
+    date issued_on
+    date due_on
+    date returned_on
+  }
+  library_due {
+    serial due_id PK
+    int loan_id FK
+    int person_id FK
+    numeric amount
+    varchar reason
+    varchar status
+  }
+  book ||--o{ book_copy : "book_id"
+  book_copy ||--o{ loan : "copy_id"
+  loan ||--o{ library_due : "loan_id"
+  person ||--o{ library_due : "person_id"
+  person ||--o{ loan : "person_id"

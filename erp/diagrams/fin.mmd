@@ -1,0 +1,108 @@
+erDiagram
+  employee {
+    serial employee_id PK
+  }
+  fee_demand {
+    serial demand_id PK
+    int student_id FK
+    int session_id FK
+    numeric total_amount
+    date due_date
+    varchar status
+  }
+  scholarship_award {
+    serial award_id PK
+    int student_id FK
+    int scheme_id FK
+    int session_id FK
+    numeric amount
+    varchar status
+    timestamptz disbursed_at
+  }
+  program {
+    serial program_id PK
+  }
+  mediclaim_claim {
+    serial claim_id PK
+    int student_id FK
+    text hospital
+    numeric bill_amount
+    numeric claimed_amount
+    varchar status
+    timestamptz submitted_at
+    timestamptz settled_at
+  }
+  payment {
+    serial payment_id PK
+    int demand_id FK
+    int student_id FK
+    numeric amount
+    varchar mode
+    varchar gateway_txn_id UK
+    varchar status
+    timestamptz paid_at
+    varchar receipt_no UK
+  }
+  fee_head {
+    serial head_id PK
+    text name UK
+    varchar category
+  }
+  salary_slip {
+    serial salary_slip_id PK
+    int employee_id FK
+    date pay_month
+    numeric gross
+    numeric deductions
+    numeric net
+  }
+  academic_session {
+    serial session_id PK
+  }
+  family_income_declaration {
+    serial declaration_id PK
+    int student_id FK
+    varchar acad_year
+    numeric annual_income
+    text income_source
+    int verified_by_employee_id FK
+    timestamptz declared_at
+  }
+  student {
+    serial student_id PK
+  }
+  fee_structure {
+    serial fee_structure_id PK
+    int program_id FK
+    varchar acad_year
+    int head_id FK
+    numeric amount
+  }
+  fee_demand_item {
+    serial demand_item_id PK
+    int demand_id FK
+    int head_id FK
+    numeric amount
+  }
+  scholarship_scheme {
+    serial scheme_id PK
+    text name
+    text provider
+    numeric min_cgpa
+    numeric max_family_income
+  }
+  academic_session ||--o{ fee_demand : "session_id"
+  academic_session ||--o{ scholarship_award : "session_id"
+  employee o|--o{ family_income_declaration : "verified_by_employee_id"
+  employee ||--o{ salary_slip : "employee_id"
+  fee_demand ||--o{ fee_demand_item : "demand_id"
+  fee_demand ||--o{ payment : "demand_id"
+  fee_head ||--o{ fee_demand_item : "head_id"
+  fee_head ||--o{ fee_structure : "head_id"
+  program ||--o{ fee_structure : "program_id"
+  scholarship_scheme ||--o{ scholarship_award : "scheme_id"
+  student ||--o{ family_income_declaration : "student_id"
+  student ||--o{ fee_demand : "student_id"
+  student ||--o{ mediclaim_claim : "student_id"
+  student ||--o{ payment : "student_id"
+  student ||--o{ scholarship_award : "student_id"

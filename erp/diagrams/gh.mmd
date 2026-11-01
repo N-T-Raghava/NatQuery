@@ -1,0 +1,30 @@
+erDiagram
+  gh_room {
+    serial gh_room_id PK
+    int guesthouse_id FK
+    varchar room_no
+    varchar room_type
+    numeric rate_per_day
+  }
+  guesthouse {
+    serial guesthouse_id PK
+    text name
+    text location
+  }
+  account {
+    serial account_id PK
+  }
+  gh_booking {
+    serial booking_id PK
+    int gh_room_id FK
+    int booked_by_account_id FK
+    text guest_name
+    text purpose
+    date check_in
+    date check_out
+    varchar status
+    numeric charges
+  }
+  account ||--o{ gh_booking : "booked_by_account_id"
+  gh_room ||--o{ gh_booking : "gh_room_id"
+  guesthouse ||--o{ gh_room : "guesthouse_id"

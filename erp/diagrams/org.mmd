@@ -1,0 +1,44 @@
+erDiagram
+  employee {
+    serial employee_id PK
+  }
+  hall {
+    serial hall_id PK
+    varchar hall_code UK
+    text name
+    int warden_employee_id FK
+    int capacity
+  }
+  program {
+    serial program_id PK
+    varchar program_code UK
+    text name
+    varchar level
+    smallint duration_years
+    int department_id FK
+  }
+  department {
+    serial department_id PK
+    varchar dept_code UK
+    text name
+    int hod_employee_id FK
+    boolean is_active
+  }
+  hall_room {
+    serial room_id PK
+    int hall_id FK
+    varchar room_no
+    smallint capacity
+  }
+  academic_session {
+    serial session_id PK
+    varchar acad_year
+    varchar term
+    date start_date
+    date end_date
+    boolean is_current
+  }
+  department ||--o{ program : "department_id"
+  employee o|--o{ department : "hod_employee_id"
+  employee o|--o{ hall : "warden_employee_id"
+  hall ||--o{ hall_room : "hall_id"

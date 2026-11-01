@@ -1,0 +1,945 @@
+{
+ "tables": {
+  "auth.account": {
+   "description": "One login per person per hat (a person can hold a student login and a staff login: \"Switch Login\")",
+   "value_hints": {
+    "account_type": [
+     "STAFF",
+     "STUDENT"
+    ],
+    "status": [
+     "ACTIVE",
+     "DISABLED"
+    ]
+   }
+  },
+  "auth.role": {
+   "description": "The roles the ERP knows (student, faculty, hod ...)"
+  },
+  "auth.account_role": {
+   "description": "Which roles an account holds, optionally limited to one department, hall or program",
+   "value_hints": {
+    "scope_type": [
+     "DEPARTMENT",
+     "GLOBAL",
+     "HALL"
+    ]
+   }
+  },
+  "auth.session": {
+   "description": "Live login sessions (the ERP carries an ssoToken in every URL)"
+  },
+  "auth.otp": {
+   "description": "One-time passwords for institute e-mail reset and passphrase retrieval"
+  },
+  "auth.login_audit": {
+   "description": "Every login, failure, logout and switch-login",
+   "value_hints": {
+    "event": [
+     "LOGIN_BLOCKED",
+     "LOGIN_FAILED",
+     "LOGIN_OK",
+     "LOGOUT"
+    ],
+    "user_agent": [
+     "Mozilla/5.0",
+     "curl/8"
+    ]
+   }
+  },
+  "org.department": {
+   "description": "Academic departments",
+   "synonyms": [
+    "branch",
+    "department"
+   ]
+  },
+  "org.program": {
+   "description": "Degree programmes (B.Tech, Dual Degree, M.Sc., M.Tech, Ph.D.)",
+   "value_hints": {
+    "level": [
+     "MSC",
+     "PG",
+     "PHD",
+     "UG"
+    ]
+   }
+  },
+  "org.hall": {
+   "description": "Halls of residence"
+  },
+  "org.hall_room": {
+   "description": "Rooms in a hall"
+  },
+  "org.academic_session": {
+   "description": "Autumn, Spring and Summer Quarter of each academic year"
+  },
+  "people.person": {
+   "description": "Name, birth and general details common to students and staff",
+   "synonyms": [
+    "name",
+    "date of birth",
+    "email",
+    "contact"
+   ],
+   "value_hints": {
+    "gender": [
+     "F",
+     "M"
+    ],
+    "blood_group": [
+     "A+",
+     "A-",
+     "AB+",
+     "B+",
+     "O+",
+     "O-"
+    ],
+    "religion": [
+     "Christian",
+     "Hindu",
+     "Jain",
+     "Muslim",
+     "Sikh"
+    ],
+    "nationality": [
+     "Indian"
+    ],
+    "mother_tongue": [
+     "Bengali",
+     "Hindi",
+     "Kannada",
+     "Marathi",
+     "Odia",
+     "Tamil",
+     "Telugu"
+    ],
+    "marital_status": [
+     "Married",
+     "Single"
+    ]
+   }
+  },
+  "people.person_identity": {
+   "description": "Government and national identifiers"
+  },
+  "people.bank_account": {
+   "description": "Bank details used for refunds and scholarships"
+  },
+  "people.address": {
+   "description": "Permanent, mailing and guardian addresses",
+   "value_hints": {
+    "state": [
+     "Andhra Pradesh",
+     "Bihar",
+     "Delhi",
+     "Gujarat",
+     "Karnataka",
+     "Maharashtra",
+     "Odisha",
+     "Rajasthan",
+     "Tamil Nadu",
+     "Telangana",
+     "Uttar Pradesh",
+     "West Bengal"
+    ],
+    "country": [
+     "India"
+    ]
+   }
+  },
+  "people.emergency_contact": {
+   "description": "Who to call in an emergency",
+   "value_hints": {
+    "relationship": [
+     "Brother",
+     "Father",
+     "Mother",
+     "Sister",
+     "Spouse"
+    ]
+   }
+  },
+  "people.employee": {
+   "description": "Faculty and staff",
+   "synonyms": [
+    "faculty",
+    "teacher",
+    "professor",
+    "staff",
+    "advisor name"
+   ],
+   "value_hints": {
+    "designation": [
+     "Accounts Officer",
+     "Assistant Professor",
+     "Assistant Registrar",
+     "Associate Professor",
+     "Hall Manager",
+     "Junior Superintendent",
+     "Library Assistant",
+     "Office Superintendent",
+     "Placement Officer",
+     "Professor",
+     "System Administrator",
+     "Teaching Assistant"
+    ],
+    "employee_type": [
+     "FACULTY",
+     "STAFF"
+    ]
+   }
+  },
+  "people.student": {
+   "description": "One row per enrolled student",
+   "synonyms": [
+    "students",
+    "roll number",
+    "enrolment",
+    "batch"
+   ],
+   "value_hints": {
+    "nature_of_admission": [
+     "GATE",
+     "JAM",
+     "JEE"
+    ],
+    "category": [
+     "EWS",
+     "GEN",
+     "OBC",
+     "SC",
+     "ST"
+    ],
+    "native_state": [
+     "Andhra Pradesh",
+     "Bihar",
+     "Delhi",
+     "Gujarat",
+     "Karnataka",
+     "Maharashtra",
+     "Odisha",
+     "Rajasthan",
+     "Tamil Nadu",
+     "Telangana",
+     "Uttar Pradesh",
+     "West Bengal"
+    ],
+    "current_status": [
+     "DEREGISTERED",
+     "GRADUATED",
+     "ON ROLL"
+    ]
+   }
+  },
+  "people.guardian": {
+   "description": "Parents and guardians of a student",
+   "value_hints": {
+    "relation": [
+     "FATHER",
+     "MOTHER"
+    ],
+    "profession": [
+     "Businessperson",
+     "Doctor",
+     "Engineer",
+     "Farmer",
+     "Government Service",
+     "Homemaker",
+     "Teacher"
+    ],
+    "education": [
+     "Graduate",
+     "Post Graduate",
+     "Secondary"
+    ]
+   }
+  },
+  "people.student_status_history": {
+   "description": "Every status a student has had (ON ROLL, DE-REGISTERED, GRADUATED ...)",
+   "value_hints": {
+    "status": [
+     "DEREGISTERED",
+     "GRADUATED",
+     "ON ROLL"
+    ]
+   }
+  },
+  "people.faculty_advisor": {
+   "description": "Which teacher advises which student, and for how long"
+  },
+  "acad.curriculum": {
+   "description": "A curriculum version of a programme (2020 Curricula, 2024 Onwards ...)"
+  },
+  "acad.course": {
+   "description": "The subject catalogue",
+   "synonyms": [
+    "subject",
+    "course catalogue"
+   ]
+  },
+  "acad.curriculum_course": {
+   "description": "Which course sits in which semester of which curriculum, and as what (core, depth, breadth, minor)",
+   "value_hints": {
+    "category": [
+     "BREADTH",
+     "CORE",
+     "ELECTIVE"
+    ]
+   }
+  },
+  "acad.course_offering": {
+   "description": "A course offered in a session",
+   "synonyms": [
+    "courses offered",
+    "section"
+   ],
+   "value_hints": {
+    "section": [
+     "A"
+    ],
+    "status": [
+     "OFFERED"
+    ]
+   }
+  },
+  "acad.offering_instructor": {
+   "description": "Teachers of an offering",
+   "value_hints": {
+    "role": [
+     "INSTRUCTOR"
+    ]
+   }
+  },
+  "acad.timetable_slot": {
+   "description": "When and where an offering meets",
+   "value_hints": {
+    "slot_code": [
+     "A1",
+     "B2",
+     "C3",
+     "D4",
+     "E5",
+     "F1",
+     "G2"
+    ],
+    "building": [
+     "Nalanda",
+     "Takshashila",
+     "Vikramshila"
+    ]
+   }
+  },
+  "acad.registration": {
+   "description": "A student's registration in an offering (regular, late, supplementary, extra credit, summer, minor, breadth)",
+   "synonyms": [
+    "enrolled courses",
+    "course registration"
+   ],
+   "value_hints": {
+    "reg_type": [
+     "LATE",
+     "REGULAR",
+     "SUPPLEMENTARY"
+    ],
+    "status": [
+     "DROPPED",
+     "REGISTERED"
+    ]
+   }
+  },
+  "acad.registration_card": {
+   "description": "Registration and de-registration cards generated per session",
+   "value_hints": {
+    "card_type": [
+     "REG"
+    ]
+   }
+  },
+  "acad.result": {
+   "description": "Marks and grade of one registration",
+   "synonyms": [
+    "grade",
+    "marks",
+    "backlog"
+   ],
+   "value_hints": {
+    "grade": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "EX",
+     "F",
+     "P"
+    ]
+   }
+  },
+  "acad.semester_performance": {
+   "description": "SGPA and CGPA after each session (\"Performance\")",
+   "synonyms": [
+    "sgpa",
+    "cgpa",
+    "gpa",
+    "performance"
+   ]
+  },
+  "acad.assignment_mark": {
+   "description": "Marks for assignments, entered by the teacher"
+  },
+  "acad.class_attendance": {
+   "description": "Attendance per class",
+   "synonyms": [
+    "attendance"
+   ],
+   "value_hints": {
+    "status": [
+     "A",
+     "L",
+     "P"
+    ]
+   }
+  },
+  "acad.exam_schedule": {
+   "description": "Central and departmental examination timetable",
+   "value_hints": {
+    "exam_type": [
+     "ENDSEM",
+     "MIDSEM"
+    ],
+    "scope": [
+     "CENTRAL",
+     "DEPARTMENTAL"
+    ]
+   }
+  },
+  "acad.exam_attendance": {
+   "description": "Who sat which exam",
+   "value_hints": {
+    "status": [
+     "A",
+     "P"
+    ]
+   }
+  },
+  "acad.admit_card": {
+   "description": "Admit cards generated and downloaded",
+   "value_hints": {
+    "exam_type": [
+     "ENDSEM",
+     "MIDSEM"
+    ]
+   }
+  },
+  "acad.special_program_application": {
+   "description": "Minor, micro credit, SAIP, SAPP and vertical choice applications",
+   "value_hints": {
+    "program_type": [
+     "MICRO_CREDIT",
+     "MINOR",
+     "SAIP",
+     "SAPP",
+     "VERTICAL"
+    ],
+    "status": [
+     "APPLIED",
+     "APPROVED",
+     "REJECTED"
+    ]
+   }
+  },
+  "acad.program_switch_application": {
+   "description": "Branch change, inter-disciplinary switch-over, dual degree and petroleum switch-over",
+   "value_hints": {
+    "switch_type": [
+     "BRANCH_CHANGE",
+     "DUAL_DEGREE",
+     "INTERDISC"
+    ],
+    "status": [
+     "APPLIED",
+     "APPROVED",
+     "REJECTED"
+    ]
+   }
+  },
+  "acad.breadth_choice": {
+   "description": "Breadth course preferences and what was allotted"
+  },
+  "acad.convocation_registration": {
+   "description": "Registration for convocation",
+   "value_hints": {
+    "status": [
+     "PENDING",
+     "REGISTERED"
+    ]
+   }
+  },
+  "acad.graduation_clearance": {
+   "description": "Final graduation processing: every section must clear the student",
+   "value_hints": {
+    "status": [
+     "CLEARED",
+     "PENDING"
+    ]
+   }
+  },
+  "acad.award_prize": {
+   "description": "Awards and prizes (UG)"
+  },
+  "acad.student_activity": {
+   "description": "Extra academic activities and activity choices",
+   "value_hints": {
+    "activity_type": [
+     "CULTURAL",
+     "NCC",
+     "NSS",
+     "SPORTS",
+     "TECHNICAL"
+    ]
+   }
+  },
+  "acad.course_feedback": {
+   "description": "Feedback a student gives on a course",
+   "value_hints": {
+    "comments": [
+     "Clear explanations",
+     "Good tutorials",
+     "Need more examples",
+     "Too fast-paced"
+    ]
+   }
+  },
+  "acad.medical_leave": {
+   "description": "Medical leave applications",
+   "value_hints": {
+    "status": [
+     "APPROVED",
+     "PENDING",
+     "REJECTED"
+    ]
+   }
+  },
+  "acad.student_document": {
+   "description": "Uploaded supporting documents and GATE score",
+   "value_hints": {
+    "doc_type": [
+     "CASTE_CERT",
+     "GATE_SCORECARD",
+     "INCOME_CERT",
+     "MARKSHEET"
+    ]
+   }
+  },
+  "acad.rep_nomination": {
+   "description": "Student representative nominations",
+   "value_hints": {
+    "status": [
+     "ELECTED",
+     "NOMINATED",
+     "REJECTED"
+    ]
+   }
+  },
+  "acad.data_sharing_consent": {
+   "description": "Consent for sharing data outside the ERP"
+  },
+  "fin.fee_head": {
+   "description": "Kinds of charges (tuition, hall rent, mess, convocation ...)"
+  },
+  "fin.fee_structure": {
+   "description": "Standard amount of each head per programme per year",
+   "value_hints": {
+    "acad_year": [
+     "2023-24",
+     "2024-25",
+     "2025-26",
+     "2026-27"
+    ]
+   }
+  },
+  "fin.fee_demand": {
+   "description": "What a student has to pay in a session",
+   "synonyms": [
+    "fees due",
+    "dues",
+    "fee"
+   ],
+   "value_hints": {
+    "status": [
+     "OVERDUE",
+     "PAID",
+     "PARTIAL"
+    ]
+   }
+  },
+  "fin.fee_demand_item": {
+   "description": "Line items of a demand"
+  },
+  "fin.payment": {
+   "description": "Payments made against a demand",
+   "synonyms": [
+    "fee payment",
+    "transaction",
+    "receipt"
+   ],
+   "value_hints": {
+    "mode": [
+     "CARD",
+     "DD",
+     "NETBANK",
+     "UPI"
+    ],
+    "status": [
+     "FAILED",
+     "SUCCESS"
+    ]
+   }
+  },
+  "fin.family_income_declaration": {
+   "description": "Family income declared for fee waiver and scholarships",
+   "value_hints": {
+    "acad_year": [
+     "2025-26"
+    ],
+    "income_source": [
+     "Agriculture",
+     "Business",
+     "Pension",
+     "Salaried",
+     "Self-employed"
+    ]
+   }
+  },
+  "fin.scholarship_scheme": {
+   "description": "Scholarship schemes"
+  },
+  "fin.scholarship_award": {
+   "description": "Scholarships awarded to students",
+   "value_hints": {
+    "status": [
+     "AWARDED",
+     "DISBURSED"
+    ]
+   }
+  },
+  "fin.mediclaim_claim": {
+   "description": "Medical bill claims",
+   "value_hints": {
+    "status": [
+     "REJECTED",
+     "SETTLED",
+     "SUBMITTED"
+    ]
+   }
+  },
+  "fin.salary_slip": {
+   "description": "Monthly salary slips of staff",
+   "synonyms": [
+    "salary",
+    "pay",
+    "payslip"
+   ]
+  },
+  "lib.book": {
+   "description": "Library catalogue",
+   "value_hints": {
+    "publisher": [
+     "McGraw-Hill",
+     "Oxford University Press",
+     "Pearson",
+     "Springer",
+     "Wiley"
+    ],
+    "category": [
+     "Engineering",
+     "Fiction",
+     "Humanities",
+     "Management",
+     "Science"
+    ]
+   }
+  },
+  "lib.book_copy": {
+   "description": "Physical copies of a book",
+   "value_hints": {
+    "status": [
+     "AVAILABLE",
+     "ISSUED",
+     "LOST"
+    ]
+   }
+  },
+  "lib.loan": {
+   "description": "Books issued to students and staff",
+   "synonyms": [
+    "issued books",
+    "borrowed books"
+   ]
+  },
+  "lib.library_due": {
+   "description": "Fines for late return or loss",
+   "synonyms": [
+    "library fine",
+    "overdue"
+   ],
+   "value_hints": {
+    "status": [
+     "PAID",
+     "UNPAID"
+    ]
+   }
+  },
+  "svc.application_type": {
+   "description": "Catalogue of paperless forms (fee certificate, creche, interim grade card ...)"
+  },
+  "svc.paperless_application": {
+   "description": "A form submitted through Paperless Application",
+   "value_hints": {
+    "status": [
+     "APPROVED",
+     "PENDING",
+     "REJECTED",
+     "SUBMITTED"
+    ]
+   }
+  },
+  "svc.application_step": {
+   "description": "Approval chain of an application",
+   "value_hints": {
+    "action": [
+     "APPROVED",
+     "PENDING",
+     "REJECTED"
+    ]
+   }
+  },
+  "svc.complaint": {
+   "description": "Complaints and requests",
+   "synonyms": [
+    "complaints",
+    "issues"
+   ],
+   "value_hints": {
+    "category": [
+     "ACADEMIC",
+     "HOSTEL",
+     "IT",
+     "MESS",
+     "OTHER"
+    ],
+    "subject": [
+     "Marks not updated",
+     "Mess quality",
+     "Room repair",
+     "Water cooler broken",
+     "Wi-Fi not working"
+    ],
+    "status": [
+     "ONGOING",
+     "OPEN",
+     "RESOLVED"
+    ]
+   }
+  },
+  "svc.grievance": {
+   "description": "Grievances",
+   "value_hints": {
+    "category": [
+     "ACADEMIC",
+     "FINANCIAL",
+     "HARASSMENT",
+     "HOSTEL"
+    ],
+    "status": [
+     "ONGOING",
+     "OPEN",
+     "RESOLVED"
+    ]
+   }
+  },
+  "svc.mail_message": {
+   "description": "Internal ERP mail",
+   "value_hints": {
+    "subject": [
+     "Exam schedule",
+     "Fee due notice",
+     "Hall maintenance",
+     "Placement drive",
+     "Registration reminder",
+     "Seminar announcement"
+    ]
+   }
+  },
+  "svc.mail_recipient": {
+   "description": "Who received a mail and whether they read it"
+  },
+  "svc.notice": {
+   "description": "Apna (internal) notices",
+   "value_hints": {
+    "body": [
+     "Notice body."
+    ],
+    "audience": [
+     "ALL",
+     "STAFF",
+     "STUDENT"
+    ]
+   }
+  },
+  "svc.counselling_session": {
+   "description": "Counselling Centre sessions",
+   "value_hints": {
+    "status": [
+     "DONE",
+     "MISSED",
+     "SCHEDULED"
+    ]
+   }
+  },
+  "svc.efile_category": {
+   "description": "Department e-file categories"
+  },
+  "svc.efile": {
+   "description": "An electronic file in a department",
+   "value_hints": {
+    "status": [
+     "CLOSED",
+     "OPEN"
+    ]
+   }
+  },
+  "svc.efile_movement": {
+   "description": "Movement of an e-file from desk to desk"
+  },
+  "svc.physical_dispatch": {
+   "description": "Physical file or item despatched or received by a department",
+   "value_hints": {
+    "direction": [
+     "INWARD",
+     "OUTWARD"
+    ],
+    "item_type": [
+     "FILE",
+     "LETTER",
+     "PARCEL"
+    ],
+    "description": [
+     "Equipment invoice",
+     "Examination papers",
+     "Letter from sponsor",
+     "Sealed tender documents"
+    ],
+    "party": [
+     "AICTE",
+     "M/s Sharma Traders",
+     "Ministry of Education",
+     "Vendor Ltd"
+    ]
+   }
+  },
+  "svc.physical_item_movement": {
+   "description": "Where a physical item is now",
+   "value_hints": {
+    "status": [
+     "MOVED",
+     "RECEIVED"
+    ]
+   }
+  },
+  "gh.guesthouse": {
+   "description": "Guest houses on campus"
+  },
+  "gh.gh_room": {
+   "description": "Rooms of a guest house",
+   "value_hints": {
+    "room_type": [
+     "AC",
+     "NONAC",
+     "SUITE"
+    ]
+   }
+  },
+  "gh.gh_booking": {
+   "description": "Guest house bookings",
+   "value_hints": {
+    "purpose": [
+     "Conference",
+     "Examiner visit",
+     "Family visit",
+     "Guest lecture",
+     "Project review"
+    ],
+    "status": [
+     "CANCELLED",
+     "COMPLETED",
+     "CONFIRMED"
+    ]
+   }
+  },
+  "cdc.company": {
+   "description": "Recruiting companies",
+   "value_hints": {
+    "sector": [
+     "Consulting",
+     "Core Engineering",
+     "Energy",
+     "Finance",
+     "IT",
+     "Manufacturing"
+    ]
+   }
+  },
+  "cdc.job_posting": {
+   "description": "Placement and internship postings",
+   "value_hints": {
+    "posting_type": [
+     "INTERN",
+     "PLACEMENT"
+    ]
+   }
+  },
+  "cdc.job_application": {
+   "description": "Student applications to postings",
+   "synonyms": [
+    "placement",
+    "applied companies"
+   ],
+   "value_hints": {
+    "status": [
+     "APPLIED",
+     "OFFERED",
+     "REJECTED",
+     "SHORTLIST"
+    ]
+   }
+  },
+  "cdc.offer": {
+   "description": "Offers made to students",
+   "synonyms": [
+    "placement offer",
+    "package",
+    "ctc"
+   ]
+  },
+  "sys.menu_module": {
+   "description": "Top-level modules (Academic, Accounts, Guest House, CDC)"
+  },
+  "sys.menu_item": {
+   "description": "Every menu link in the ERP"
+  },
+  "sys.role_menu_access": {
+   "description": "Which role sees which menu link"
+  },
+  "sys.audit_event": {
+   "description": "Data-change audit trail",
+   "value_hints": {
+    "action": [
+     "DELETE",
+     "INSERT",
+     "UPDATE"
+    ]
+   }
+  }
+ }
+}
