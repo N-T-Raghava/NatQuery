@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]   # >=77: SPDX license expressions
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "natquery"
-version = "1.0.1"
-description = "Interact with PostgreSQL databases using natural language via a secure, performance-aware CLI"
+dynamic = ["version"]                      # single source of truth: natquery/__init__.py
+description = "Ask PostgreSQL questions in plain English through a secure CLI with authentication, role-based access control and tamper-evident auditing"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Tanmai Raghava", email = "tanmairaghava@kgpian.iitkgp.ac.in"},
     {name = "Krishna Chaitanya", email = "krish89@kgpian.iitkgp.ac.in"},
@@ -16,28 +16,32 @@ authors = [
     {name = "Lokeswara Reddy", email = "lokeswarareddy2006@gmail.com"},
     {name = "Manasa Vankam", email = "vankammanasa45@gmail.com"}
 ]
-keywords = ["nlp", "database", "postgres", "natural-language", "cli", "llm"]
+keywords = ["nlp", "database", "postgres", "natural-language", "cli", "llm", "rbac", "security", "erp"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Database",
+    "Topic :: Security",
     "Topic :: Utilities",
 ]
 
 dependencies = [
     "psycopg2-binary>=2.9.0",
-    "sqlglot>=25.0.0",
+    # The SQL enforcer inspects sqlglot's node classes (e.g. exp.SetOperation, added in 25.34).
+    # Tested on 25.34 - 30.21. Widen the range only after running the full test suite on the new version.
+    "sqlglot>=25.34.0,<31",
     "groq>=0.4.0",
-    "rich>=13.0.0"
+    "rich>=13.0.0",
+    "PyYAML>=6.0",                         # access-policy files (policy.yaml)
 ]
 
 [project.urls]
@@ -51,22 +55,58 @@ Changelog = "https://github.com/N-T-Raghava/NatQuery/blob/main/CHANGELOG.md"
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-timeout>=2.1.0",
+    "hypothesis>=6.100.0",
     "black==25.1.0",
     "ruff==0.15.6",
     "build>=1.0.0",
     "twine>=4.0.0"
 ]
 
-[tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["natquery*", "benchmarks*"]
-
 [project.scripts]
 natquery = "natquery.cli.main:main"
 
+# Auth providers / LLM providers / DB backends are plug-ins. A separate package can register an
+# auth provider by exposing an entry point in the group "natquery.auth_providers", e.g.
+#   [project.entry-points."natquery.auth_providers"]
+#   my-sso = "my_pkg.sso:create_provider"
+
+[tool.setuptools.dynamic]
+version = {attr = "natquery.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["natquery*"]
+
+[tool.setuptools.package-data]
+# `natquery policy init` copies these into the user's workspace; they must ship in the wheel.
+natquery = ["examples/*.yaml", "examples/*.json", "examples/*.sql"]
+
 [tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "-rfE --strict-markers --strict-config --cov=natquery --cov-report=term-missing:skip-covered --cov-fail-under=90"
+timeout = 120
 markers = [
-    "integration: marks integration tests"
+    "integration: needs a real PostgreSQL (set NATQUERY_TEST_PG_HOST/PORT/USER/PASSWORD; skipped otherwise)",
+]
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
+
+[tool.coverage.run]
+source = ["natquery"]
+branch = true
+# Nothing is omitted: every module is covered by the unit suite. Integration tests add more
+# when a database is available but are not needed to reach the gate.
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "@(abc\\.)?abstractmethod",
+    "\\.\\.\\.$",
 ]
 
 [tool.black]
@@ -76,3 +116,15 @@ target-version = ["py310"]
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "SIM"]
+ignore = ["B008", "SIM108", "UP007"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "SIM117", "E741"]
+# Synthetic-data generators and benchmark runners: they are scripts, not library code. Style rules are
+# relaxed here because tidying them (unused values, loop counters) risks changing the seeded data
+# and the benchmark corpora that the published results depend on.
+"erp/**" = ["B007", "B905", "E402", "E731", "F403", "F405", "F841", "SIM113", "SIM115", "UP031"]
+"benchmarks/**" = ["B007", "B905", "E741"]
