@@ -1,0 +1,132 @@
+\chapter{Features of NatQuery}
+\label{ch:features}
+
+This chapter lists what NatQuery offers, grouped by purpose. Chapter~\ref{ch:how} explains how each
+mechanism works; Chapter~\ref{ch:bench} measures them.
+
+\section{Feature Catalogue}
+
+\begin{table}[htbp]
+\centering
+\caption{Feature catalogue.}
+\label{tab:features}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.4cm} L{3.7cm} Y}
+\toprule
+\hdr \textbf{Group} & \textbf{Feature} & \textbf{What it does} \\
+\midrule
+\multirow{5}{=}{Access control}
+ & Pluggable authentication & Local accounts built in; LDAP, single sign-on or the ERP's own session via a provider interface \\
+ & Policy-driven roles & Roles, inheritance and priorities in one YAML file; adding a role needs no code \\
+ & Table and column grants & Hidden tables and columns are absent from the prompt and fail to resolve in the enforcer \\
+ & Row filters & Per-user conditions bound from identity attributes, wrapped around every table reference \\
+ & Masking & Columns can be shown masked (\code{redacted}, \code{last4}, \code{email}, \code{null}) but not filtered, sorted or joined on \\
+\midrule
+\multirow{5}{=}{SQL safety}
+ & Never executes model SQL & The query is parsed, checked, rewritten and regenerated; only regenerated SQL runs \\
+ & Statement allow-list & SELECT and set operations only; function allow-list; no cross joins, recursion or LATERAL \\
+ & Bounded execution & Read-only transaction, timeout, row cap, join and nesting limits, always rolled back \\
+ & Result guard & Pattern redaction (card numbers, tokens) and size caps on returned values \\
+ & Input guard and limits & Injection screening (a speed bump, not the boundary), rate and model-call limits \\
+\midrule
+\multirow{4}{=}{Accuracy}
+ & Repair loop & Fixable rejections go back to the model with a sanitised reason, at most twice \\
+ & Schema selection & Weighted table ranking, foreign-key bridging and lookup tables for large schemas \\
+ & Semantic hints & Table descriptions, synonyms and value hints for categorical columns \\
+ & Wider-schema retry & An ``unanswerable'' answer on a trimmed schema is retried once with more tables \\
+\midrule
+\multirow{4}{=}{Databases}
+ & PostgreSQL backend & Pooled connections, \code{SET LOCAL ROLE}, statement timeouts \\
+ & Multi-schema mode & \code{schema.table} naming, \code{schema.*} grants, auto-completion of unambiguous names \\
+ & Row-level security hook & Identity passed as transaction settings so database policies repeat the row scopes \\
+ & Catalog-based extraction & Schema read from \code{pg_catalog}; the login needs no table privileges \\
+\midrule
+\multirow{4}{=}{Accountability}
+ & Hash-chained audit log & Tamper-evident record of every request; optional HMAC key; \code{audit verify} command \\
+ & Audit before execution & If the ``authorized'' record cannot be written, nothing runs \\
+ & Opaque errors & Users see a generic message and a reference id; details only in the log \\
+ & Secret redaction & Keys and passwords removed from logs; files are private to the owner (POSIX) \\
+\midrule
+\multirow{2}{=}{Operations}
+ & Plan and cost analysis & \code{EXPLAIN}-based metrics and index suggestions for roles allowed to see plans \\
+ & Command line and shell & Connect, query, administer schema, policy, users and audit from the terminal \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Extension Points}
+
+Every external dependency sits behind an interface (Table~\ref{tab:seams}), so NatQuery can be adapted to
+the real ERP without touching the security core.
+
+\begin{table}[htbp]
+\centering
+\caption{Extension points.}
+\label{tab:seams}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.2cm} L{3.3cm} Y}
+\toprule
+\hdr \textbf{Concern} & \textbf{Built in} & \textbf{To replace it} \\
+\midrule
+Authentication & Local accounts (scrypt) & Implement \code{AuthProvider} and register it, or ship an entry point in the group \code{natquery.auth_providers} \\
+Database & PostgreSQL & Implement \code{QueryBackend} and name its \code{sqlglot} dialect (for example Oracle) \\
+Language model & Groq & Implement \code{LLMClient.complete}; any hosted or on-premises model \\
+Input screening & Pattern and length guards & Implement \code{InputGuard} \\
+Rate limiting, sessions & In-memory & Implement the limiter and session-store interfaces (for example Redis) \\
+Roles and rules & YAML policy & Add a block; no code change \\
+Masking strategies & Four built in & Add a template under \code{masking:} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Command-Line Interface}
+
+\begin{table}[htbp]
+\centering
+\caption{The \code{natquery} command.}
+\label{tab:cli}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{5.2cm} Y}
+\toprule
+\hdr \textbf{Command} & \textbf{Purpose} \\
+\midrule
+\code{natquery connect} & Configure the database and model for a workspace and extract the schema \\
+\code{natquery select}, \code{reset}, \code{config} & Switch workspace, remove its configuration, show it with secrets masked \\
+\code{natquery schema refresh} & Re-extract the schema (needs the permission \code{can_refresh_schema}) \\
+\code{natquery schema hints} & Store example values of categorical columns for the prompt \\
+\code{natquery policy init}, \code{check} & Create an example policy; validate the policy against the schema \\
+\code{natquery user add}, \code{list}, \code{roles}, \code{attrs}, \code{passwd}, \code{disable}, \code{enable} & Manage local accounts, their roles and identity attributes \\
+\code{natquery audit verify}, \code{tail} & Check the hash chain; show recent records \\
+\code{natquery} & Interactive shell: log in, then ask questions in English \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Quality Assurance}
+
+Because the enforcer is the security boundary, it has the heaviest testing (Table~\ref{tab:qa}).
+
+\begin{table}[htbp]
+\centering
+\caption{How the code base is tested.}
+\label{tab:qa}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y}
+\toprule
+\hdr \textbf{Method} & \textbf{Detail} \\
+\midrule
+Unit and integration tests & 855 tests; branch coverage about 97\% with a 90\% gate; nothing excluded from coverage \\
+Integration on real PostgreSQL & Enforcer corpus and full pipeline, write attempts that bypass the enforcer, statement timeouts, \code{SET LOCAL ROLE}, and 40 concurrent threads with isolation checks \\
+Property-based fuzzing & Hypothesis generates queries against the enforcer; invariants are documented in the test file \\
+Manual mutation testing & One security rule sabotaged at a time: 96 of 97 mutants killed; the survivor is an equivalent mutant \\
+Pinned parser range & \code{sqlglot} is security-relevant; the declared range is the range the suite was run against \\
+Three benchmark tracks & BIRD for accuracy, AdventureWorks for attacks, the ERP for scale and roles (Chapter~\ref{ch:bench}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier

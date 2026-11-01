@@ -1,0 +1,79 @@
+% NatQuery architecture diagram (TikZ). Edit freely; compiled inside Chapter 2.
+\begin{tikzpicture}[
+  x=1cm, y=1cm,
+  box/.style={draw=nqblue, fill=nqlight, rounded corners=2pt, align=center, minimum width=2.95cm, minimum height=1.15cm, font=\scriptsize, inner sep=2pt, text width=2.7cm},
+  ext/.style={box, fill=white, dashed, draw=nqred},
+  store/.style={cylinder, shape border rotate=90, aspect=0.22, draw=nqblue, fill=nqgrey, align=center, font=\scriptsize, minimum height=1.2cm, minimum width=2.4cm, inner sep=2pt},
+  flow/.style={-{Latex[length=1.8mm]}, thick, nqblue},
+  loop/.style={-{Latex[length=1.8mm]}, thick, nqorange},
+  opt/.style={-{Latex[length=1.8mm]}, thick, dashed, gray},
+  lab/.style={font=\tiny, inner sep=1pt, fill=white},
+  tag/.style={circle, draw=nqgreen, fill=white, font=\tiny\bfseries, inner sep=0.8pt, text=nqgreen}
+]
+% ---- columns and rows
+\def\cA{0}\def\cB{3.6}\def\cC{7.2}\def\cD{10.8}\def\cL{-4.7}
+\def\rA{0}\def\rB{-2.5}\def\rC{-5.0}\def\rD{-7.5}\def\rE{-9.9}
+
+% ---- row 1: identify and screen
+\node[ext, minimum width=2.4cm, text width=2.1cm] (user) at (\cL,\rA) {User / CLI\\(asks in English)};
+\node[box] (auth) at (\cA,\rA) {\textbf{1 Authentication}\\and session};
+\node[box] (role) at (\cB,\rA) {\textbf{2 Role selection}\\highest priority or the one chosen};
+\node[box] (guard) at (\cC,\rA) {\textbf{3 Input guard}\\and rate limit};
+\node[store] (cache) at (\cD,\rA) {Schema cache\\+ semantics};
+% ---- row 2: build the prompt
+\node[ext, minimum width=2.4cm, text width=2.1cm] (llm) at (\cL,\rB) {LLM (external,\\untrusted)};
+\node[box] (client) at (\cA,\rB) {\textbf{7 LLM client}\\SQL extraction, repair prompts};
+\node[box] (prompt) at (\cB,\rB) {\textbf{6 Prompt builder}\\rules + schema + question};
+\node[box] (select) at (\cC,\rB) {\textbf{5 Schema selection}\\rank, FK bridge, value hints};
+\node[box] (view) at (\cD,\rB) {\textbf{4 Role-filtered}\\\textbf{schema view}};
+% ---- row 3: enforce and execute
+\node[box, fill=nqorange!25, draw=nqorange] (enf) at (\cA,\rC) {\textbf{8 SQL enforcer}\\parse, allow-list, resolve, row filters, masks, regenerate};
+\node[box] (audit1) at (\cB,\rC) {\textbf{9 Audit record}\\``authorized'' (written before execution)};
+\node[box] (exec) at (\cC,\rC) {\textbf{10 Executor}\\read-only transaction, \texttt{SET LOCAL ROLE}, session variables};
+\node[store] (pg) at (\cD,\rC) {PostgreSQL\\+ row-level\\security};
+% ---- row 4: return
+\node[ext, minimum width=2.4cm, text width=2.1cm] (user2) at (\cL,\rD) {User / CLI\\(reads the answer)};
+\node[box] (ans) at (\cA,\rD) {\textbf{13 Answer}\\rows, notes, reference id};
+\node[box] (audit2) at (\cB,\rD) {\textbf{12 Audit record}\\``completed''};
+\node[box] (rguard) at (\cC,\rD) {\textbf{11 Result guard}\\redaction, size caps};
+\node[box, fill=white, dashed] (plan) at (\cD,\rD) {Plan and cost analysis\\(optional, \texttt{EXPLAIN})};
+% ---- row 5: stores
+\node[store] (pol) at (\cA,\rE) {Policy file\\(YAML)};
+\node[store] (log) at (\cB+0.6,\rE) {Audit log\\(hash chain)};
+\node[font=\scriptsize, align=left, anchor=west, text width=6.3cm] (leg) at (\cC-0.1,\rE) {%
+  \tikz[baseline=-0.6ex]\draw[flow] (0,0)--(0.6,0); request path \quad
+  \tikz[baseline=-0.6ex]\draw[loop] (0,0)--(0.6,0); repair loop\\[2pt]
+  \tikz[baseline=-0.6ex]\node[tag]{P}; reads the policy \quad
+  \tikz[baseline=-0.6ex]\node[tag]{A}; writes the audit log};
+
+% ---- flow arrows
+\draw[flow] (user) -- node[lab,above]{question} (auth);
+\draw[flow] (auth) -- (role);
+\draw[flow] (role) -- (guard);
+\draw[opt] (cache) -- (view);
+\draw[flow] (guard.south) -- ++(0,-0.55) -| node[lab, pos=0.25, above]{} (view.north);
+\draw[flow] (view) -- (select);
+\draw[flow] (select) -- (prompt);
+\draw[flow] (prompt) -- (client);
+\draw[<->, thick, nqred, dashed] (llm) -- node[lab,above]{prompt / SQL} (client);
+\draw[flow] ([xshift=-0.35cm]client.south) -- node[lab, left]{SQL text} ([xshift=-0.35cm]enf.north);
+\draw[loop] ([xshift=0.35cm]enf.north) -- node[lab, right]{reason} ([xshift=0.35cm]client.south);
+\draw[flow] (enf) -- node[lab,above]{safe SQL} (audit1);
+\draw[flow] (audit1) -- (exec);
+\draw[flow] (exec) -- (pg);
+\draw[<-, thick, nqblue] ([yshift=-0.25cm]exec.east) -- ([yshift=-0.25cm]pg.west);
+\draw[flow] (exec) -- (rguard);
+\draw[opt] (exec.south east) -- (plan.north west);
+\draw[flow] (rguard) -- (audit2);
+\draw[flow] (audit2) -- (ans);
+\draw[flow] (ans) -- node[lab,above]{answer} (user2);
+
+% ---- markers
+\node[tag] at (role.north east) {P};
+\node[tag] at (view.north east) {P};
+\node[tag] at (enf.north east) {P};
+\node[tag] at (exec.north east) {P};
+\node[tag] at (auth.north east) {A};
+\node[tag] at (audit1.north east) {A};
+\node[tag] at (audit2.north east) {A};
+\end{tikzpicture}
