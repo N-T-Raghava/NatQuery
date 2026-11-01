@@ -1,0 +1,5 @@
+sqlglot>=25.34,<31      # the enforcer keys on sqlglot node classes: tested on 25.34 - 30.21; re-run the suite before widening
+psycopg2-binary>=2.9
+groq>=0.9
+rich>=13
+PyYAML>=6
