@@ -1,0 +1,280 @@
+erDiagram
+  semester_performance {
+    serial performance_id PK
+    int student_id FK
+    int session_id FK
+    numeric sgpa
+    numeric cgpa
+    smallint credits_earned
+  }
+  offering_instructor {
+    serial offering_instructor_id PK
+    int offering_id FK
+    int employee_id FK
+    varchar role
+  }
+  course_feedback {
+    serial feedback_id PK
+    int registration_id FK
+    smallint rating
+    text comments
+    timestamptz submitted_at
+  }
+  curriculum {
+    serial curriculum_id PK
+    text name
+    int program_id FK
+    smallint effective_from_year
+    boolean is_active
+  }
+  program {
+    serial program_id PK
+  }
+  rep_nomination {
+    serial nomination_id PK
+    int student_id FK
+    int session_id FK
+    text post
+    varchar status
+  }
+  class_attendance {
+    bigserial class_attendance_id PK
+    int registration_id FK
+    date attended_on
+    char status
+    int marked_by_employee_id FK
+  }
+  result {
+    serial result_id PK
+    int registration_id FK
+    numeric marks
+    varchar grade
+    smallint grade_points
+    boolean is_backlog
+    timestamptz declared_at
+  }
+  program_switch_application {
+    serial switch_id PK
+    int student_id FK
+    varchar switch_type
+    int from_department_id FK
+    int to_department_id FK
+    numeric cgpa_at_application
+    varchar status
+    timestamptz applied_at
+  }
+  student {
+    serial student_id PK
+  }
+  medical_leave {
+    serial medical_leave_id PK
+    int student_id FK
+    date from_date
+    date to_date
+    text reason
+    varchar status
+    int approved_by_employee_id FK
+  }
+  convocation_registration {
+    serial convocation_id PK
+    int student_id FK
+    smallint convocation_year
+    varchar status
+    timestamptz registered_at
+  }
+  special_program_application {
+    serial application_id PK
+    int student_id FK
+    varchar program_type
+    int target_department_id FK
+    varchar status
+    timestamptz applied_at
+    timestamptz decided_at
+    text remarks
+  }
+  employee {
+    serial employee_id PK
+  }
+  timetable_slot {
+    serial slot_id PK
+    int offering_id FK
+    smallint day_of_week
+    varchar slot_code
+    time start_time
+    time end_time
+    varchar room_no
+    varchar building
+  }
+  curriculum_course {
+    serial curriculum_course_id PK
+    int curriculum_id FK
+    int course_id FK
+    smallint semester_no
+    varchar category
+  }
+  department {
+    serial department_id PK
+  }
+  registration {
+    serial registration_id PK
+    int student_id FK
+    int offering_id FK
+    varchar reg_type
+    varchar status
+    timestamptz registered_at
+  }
+  award_prize {
+    serial award_id PK
+    int student_id FK
+    text award_name
+    smallint awarded_year
+    text details
+  }
+  exam_attendance {
+    bigserial exam_attendance_id PK
+    int exam_id FK
+    int student_id FK
+    varchar seat_no
+    char status
+  }
+  data_sharing_consent {
+    int student_id PK
+    boolean consented
+    timestamptz decided_at
+  }
+  assignment_mark {
+    serial assignment_mark_id PK
+    int registration_id FK
+    text title
+    numeric max_marks
+    numeric marks_obtained
+    int entered_by_employee_id FK
+    timestamptz entered_at
+  }
+  registration_card {
+    serial card_id PK
+    int student_id FK
+    int session_id FK
+    varchar card_type
+    timestamptz generated_at
+  }
+  academic_session {
+    serial session_id PK
+  }
+  admit_card {
+    serial admit_card_id PK
+    int student_id FK
+    int session_id FK
+    varchar exam_type
+    timestamptz generated_at
+    timestamptz downloaded_at
+  }
+  student_activity {
+    serial activity_id PK
+    int student_id FK
+    int session_id FK
+    varchar activity_type
+    text activity_name
+    smallint hours
+    int verified_by_employee_id FK
+  }
+  course_offering {
+    serial offering_id PK
+    int course_id FK
+    int session_id FK
+    varchar section
+    smallint seats
+    varchar status
+  }
+  course {
+    serial course_id PK
+    varchar course_code UK
+    text title
+    smallint credits
+    smallint lecture_hours
+    smallint tutorial_hours
+    smallint practical_hours
+    int department_id FK
+  }
+  exam_schedule {
+    serial exam_id PK
+    int offering_id FK
+    varchar exam_type
+    varchar scope
+    date exam_date
+    time start_time
+    text venue
+  }
+  breadth_choice {
+    serial breadth_choice_id PK
+    int student_id FK
+    int session_id FK
+    int course_id FK
+    smallint preference_no
+    boolean allotted
+  }
+  student_document {
+    serial document_id PK
+    int student_id FK
+    varchar doc_type
+    text file_path
+    smallint gate_score
+    timestamptz uploaded_at
+    boolean verified
+  }
+  graduation_clearance {
+    serial clearance_id PK
+    int student_id FK
+    boolean department_clear
+    boolean library_clear
+    boolean hall_clear
+    boolean accounts_clear
+    varchar status
+    timestamptz updated_at
+  }
+  academic_session ||--o{ admit_card : "session_id"
+  academic_session ||--o{ breadth_choice : "session_id"
+  academic_session ||--o{ course_offering : "session_id"
+  academic_session ||--o{ registration_card : "session_id"
+  academic_session ||--o{ rep_nomination : "session_id"
+  academic_session ||--o{ semester_performance : "session_id"
+  academic_session ||--o{ student_activity : "session_id"
+  course ||--o{ breadth_choice : "course_id"
+  course ||--o{ course_offering : "course_id"
+  course ||--o{ curriculum_course : "course_id"
+  course_offering ||--o{ exam_schedule : "offering_id"
+  course_offering ||--o{ offering_instructor : "offering_id"
+  course_offering ||--o{ registration : "offering_id"
+  course_offering ||--o{ timetable_slot : "offering_id"
+  curriculum ||--o{ curriculum_course : "curriculum_id"
+  department o|--o{ special_program_application : "target_department_id"
+  department ||--o{ course : "department_id"
+  department ||--o{ program_switch_application : "from_department_id"
+  department ||--o{ program_switch_application : "to_department_id"
+  employee o|--o{ medical_leave : "approved_by_employee_id"
+  employee o|--o{ student_activity : "verified_by_employee_id"
+  employee ||--o{ assignment_mark : "entered_by_employee_id"
+  employee ||--o{ class_attendance : "marked_by_employee_id"
+  employee ||--o{ offering_instructor : "employee_id"
+  exam_schedule ||--o{ exam_attendance : "exam_id"
+  program ||--o{ curriculum : "program_id"
+  registration ||--o{ assignment_mark : "registration_id"
+  registration ||--o{ class_attendance : "registration_id"
+  registration ||--o| course_feedback : "registration_id"
+  registration ||--o| result : "registration_id"
+  student ||--o{ admit_card : "student_id"
+  student ||--o{ award_prize : "student_id"
+  student ||--o{ breadth_choice : "student_id"
+  student ||--o{ convocation_registration : "student_id"
+  student ||--o{ exam_attendance : "student_id"
+  student ||--o{ medical_leave : "student_id"
+  student ||--o{ program_switch_application : "student_id"
+  student ||--o{ registration : "student_id"
+  student ||--o{ registration_card : "student_id"
+  student ||--o{ rep_nomination : "student_id"
+  student ||--o{ semester_performance : "student_id"
+  student ||--o{ special_program_application : "student_id"
+  student ||--o{ student_activity : "student_id"
+  student ||--o{ student_document : "student_id"
+  student ||--o| data_sharing_consent : "student_id"
+  student ||--o| graduation_clearance : "student_id"

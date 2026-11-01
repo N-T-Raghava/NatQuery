@@ -1,0 +1,11 @@
+{
+  "tables": {
+    "students":    {"description": "Enrolled students", "synonyms": ["student", "learner", "kgpian"]},
+    "faculty":     {"description": "Teaching staff", "synonyms": ["teacher", "professor", "instructor"]},
+    "courses":     {"description": "Courses offered each semester", "synonyms": ["course", "subject", "class"]},
+    "enrollments": {"description": "Which student took which course, with grade and marks", "synonyms": ["enrolment", "registration", "grade", "marks", "result"]},
+    "fees":        {"description": "Semester fee dues and payments", "synonyms": ["fee", "payment", "dues", "tuition"]},
+    "salaries":    {"description": "Monthly staff salary records", "synonyms": ["salary", "pay", "payroll"]},
+    "departments": {"description": "Academic departments", "synonyms": ["department", "dept"]}
+  }
+}

@@ -1,0 +1,57 @@
+\chapter{Repository and Reproduction}
+\label{app:repro}
+
+\section{Repository Layout}
+
+\begin{table}[htbp]
+\centering
+\caption{Repository layout.}
+\label{tab:repo}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.4cm} Y}
+\toprule
+\hdr \textbf{Path} & \textbf{Content} \\
+\midrule
+\code{src/natquery/} & The library: \code{auth}, \code{access}, \code{audit}, \code{backends}, \code{cli}, \code{config}, \code{execution}, \code{llm}, \code{observability}, \code{orchestration}, \code{prompt}, \code{schema}, \code{security} \\
+\code{tests/} & Unit and integration tests \\
+\code{benchmarks/bird/} & BIRD Mini-Dev runner, predictions, per-question results, official scoring logs \\
+\code{benchmarks/security/} & AdventureWorks security track: attack corpora, runner, policy, results \\
+\code{erp/} & Synthetic ERP: schema model, DDL, auth functions, row-level security, seed data, policy, 40 questions, runner and results \\
+\code{ARCHITECTURE.md}, \code{REPORT.md}, \code{SECURITY_REPORT.md} & Security model and limits; BIRD report; security report \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Reproduction}
+
+Secrets are always passed through environment variables and never written to files.
+
+\begin{lstlisting}[caption={Installing, testing and running the three tracks (paths relative to the repository).}]
+pip install -e ".[dev]" psycopg2-binary
+pytest                                        # about 850 tests, 90% coverage gate
+
+# BIRD Mini-Dev (needs the BIRD PostgreSQL files)
+export GROQ_API_KEY=...  PGDATABASE=bird  BIRD_DATA=/path/to/MINIDEV
+python benchmarks/bird/bird_bench.py run --gap 3
+python benchmarks/bird/bird_bench.py report
+
+# AdventureWorks security
+bash benchmarks/security/setup_adventureworks.sh
+python benchmarks/security/sec_bench.py sql     # hostile SQL, no model needed
+
+# Synthetic ERP
+python erp/build_erp.py --host 127.0.0.1 --port 5432 --user postgres --password ...
+python erp/test_erp.py  --port 5432 --superuser-password ...      # 51 checks
+python erp/make_value_hints.py                                    # value hints
+cd erp/bench
+python erp_bench.py gold                       # no model: 41 checks
+python erp_bench.py nl --gap 22                # 40 questions, resumable
+python erp_bench.py report
+\end{lstlisting}
+
+\section{Cost of Reproduction}
+
+The BIRD run takes about 40 minutes and costs about \$0.21 at list price; the ERP language-model run takes
+about 45 minutes on a free Groq key (8,000 tokens per minute) and uses roughly 200,000 tokens, close to one
+key's daily allowance, so a second key or a second day may be needed.

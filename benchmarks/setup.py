@@ -8,7 +8,6 @@ from datetime import date, timedelta
 import psycopg
 from psycopg import sql
 
-
 SEED = 1337
 
 
@@ -421,10 +420,9 @@ def copy_rows(
         column_sql,
     )
 
-    with conn.cursor() as cur:
-        with cur.copy(query) as copy:
-            for row in rows:
-                copy.write_row(row)
+    with conn.cursor() as cur, cur.copy(query) as copy:
+        for row in rows:
+            copy.write_row(row)
 
 
 # ============================================================

@@ -1,56 +1,42 @@
 def format_schema(schema: dict) -> str:
-    """
-    Convert schema JSON → compact SQL-like text for LLM.
-
-    RAG-ready:
-    - Works with full schema OR filtered schema
-    """
-
+    """Convert a (role-filtered) schema dict into compact SQL-like text for the LLM."""
     if not schema or "tables" not in schema:
         return ""
 
-    lines = []
-
     tables = schema["tables"]
-
-    # Ensure deterministic ordering
-    for table_name in sorted(tables.keys()):
+    blocks = []
+    for table_name in sorted(tables):
         table = tables[table_name]
-
         columns = table.get("columns", {})
         pk = set(table.get("primary_key", []))
+        masked = set(table.get("masked_columns", []))
 
+        hints = table.get("value_hints", {})
         col_lines = []
-
-        for col_name in columns:
-            col_type = columns[col_name].upper()
-
+        for col_name, col_type in columns.items():
+            line = f"  {col_name} {col_type.upper()}"
             if col_name in pk:
-                col_lines.append(f"  {col_name} {col_type} PRIMARY KEY")
-            else:
-                col_lines.append(f"  {col_name} {col_type}")
+                line += " PRIMARY KEY"
+            if col_name in masked:
+                line += (
+                    "  -- DISPLAY-ONLY: select directly, never filter/sort/aggregate"
+                )
+            if col_name in hints and col_name not in masked:
+                line += "  -- values: " + ", ".join(
+                    "'" + v.replace("'", "''") + "'" for v in hints[col_name]
+                )
+            col_lines.append(line)
 
-        row_count = table.get("row_count")
-        row_count_label = f" [ROW COUNT: {row_count}]" if row_count is not None else ""
-        table_block = (
-            f"TABLE {table_name}{row_count_label} (\n" + ",\n".join(col_lines) + "\n)"
-        )
-        lines.append(table_block)
+        header = f"TABLE {table_name}"
+        if table.get("description"):
+            header += f"  -- {table['description']}"
+        blocks.append(header + " (\n" + ",\n".join(col_lines) + "\n)")
 
-    # Relationships (FKs)
-    relationships = []
-
-    for table_name in sorted(tables.keys()):
-        fks = tables[table_name].get("foreign_keys", [])
-
-        for fk in fks:
-            relationships.append(
-                f"{table_name}.{fk['column']} → "
-                f"{fk['references']['table']}.{fk['references']['column']}"
-            )
-
+    relationships = [
+        f"{t}.{fk['column']} -> {fk['references']['table']}.{fk['references']['column']}"
+        for t in sorted(tables)
+        for fk in tables[t].get("foreign_keys", [])
+    ]
     if relationships:
-        lines.append("\nRELATIONSHIPS:")
-        lines.extend(relationships)
-
-    return "\n\n".join(lines)
+        blocks.append("RELATIONSHIPS:\n" + "\n".join(relationships))
+    return "\n\n".join(blocks)

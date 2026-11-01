@@ -1,0 +1,31 @@
+\chapter{ERP Benchmark Questions and Results}
+\label{app:questions}
+
+Table~\ref{tab:allq} lists the 40 questions with the role that asks each, the result of the first run and
+of the final run, and how NatQuery handled the final answer. Levels: E easy, M medium, H hard.
+\checkmark{} = correct; $\times$ = wrong or not answered; ``safe'' = a security question where nothing
+forbidden was returned. Asking roles: \code{student}, \code{faculty}, \code{hod} (head of department),
+\code{dept_office}, \code{acad_section}, \code{accounts}, \code{library}, \code{hall_office}, \code{cdc},
+\code{admin}.
+
+{\small
+\setlength{\tabcolsep}{3pt}
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{longtable}{L{0.9cm} L{0.5cm} L{1.9cm} L{5.4cm} L{1.0cm} L{1.0cm} L{1.9cm}}
+\caption{The 40 ERP questions with results.}\label{tab:allq}\\
+\toprule
+\hdr \textbf{ID} & \textbf{Lv} & \textbf{Role} & \textbf{Question} & \textbf{Run 1} & \textbf{Final} & \textbf{Outcome} \\
+\midrule
+\endfirsthead
+\toprule
+\hdr \textbf{ID} & \textbf{Lv} & \textbf{Role} & \textbf{Question} & \textbf{Run 1} & \textbf{Final} & \textbf{Outcome} \\
+\midrule
+\endhead
+\midrule \multicolumn{7}{r}{\emph{continued on next page}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\input{Appendices/_qtable}
+\end{longtable}
+}

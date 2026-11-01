@@ -1,109 +1,69 @@
-import json
-import uuid
+"""Operational (system) logging. Every payload is secret-scrubbed first.
+
+Security-relevant events (logins, authorization decisions, executed queries)
+go to the tamper-evident AuditLog in natquery.audit, not here.
+"""
+
+from __future__ import annotations
+
 import hashlib
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from natquery.config import paths
+from natquery.security.redaction import redact_secrets
+
 
 class NatQueryLogger:
-
-    BASE_DIR = Path.home() / ".natquery"
-    SYSTEM_LOG = BASE_DIR / "system.log"
+    @staticmethod
+    def _timestamp() -> str:
+        return datetime.now(timezone.utc).isoformat()
 
     @staticmethod
-    def _timestamp():
-        return datetime.now(timezone.utc).isoformat() + "Z"
+    def _system_log() -> Path:
+        return paths.base_dir() / "system.log"
 
-    @classmethod
-    def generate_conv_id(cls) -> str:
-        return str(uuid.uuid4())
+    @staticmethod
+    def _append(path: Path, entry: dict) -> None:
+        with paths.open_private_append(path) as f:
+            f.write(json.dumps(redact_secrets(entry), default=str) + "\n")
 
     @classmethod
     def log_event(
-        cls,
-        level: str,
-        event: str,
-        db_name: str = None,
-        conv_id: str = None,
-        details: dict = None,
+        cls, level, event, db_name=None, conv_id=None, details=None, user=None
     ):
-
-        cls.BASE_DIR.mkdir(exist_ok=True)
-
-        log_entry = {
-            "timestamp": cls._timestamp(),
-            "level": level,
-            "event": event,
-            "conv_id": conv_id,
-            "db_name": db_name,
-            "details": details or {},
-        }
-
-        with open(cls.SYSTEM_LOG, "a") as f:
-            f.write(json.dumps(log_entry) + "\n")
-
-    @classmethod
-    def log_conversation(
-        cls,
-        db_name: str,
-        conv_id: str,
-        user_query: str,
-        generated_sql: str,
-        rows_returned: int,
-        execution_time_ms: float,
-    ):
-
-        db_log_dir = cls.BASE_DIR / db_name / "logs"
-        db_log_dir.mkdir(parents=True, exist_ok=True)
-
-        conv_file = db_log_dir / "conversations.jsonl"
-
-        entry = {
-            "timestamp": cls._timestamp(),
-            "conv_id": conv_id,
-            "user_query": user_query,
-            "generated_sql": generated_sql,
-            "rows_returned": rows_returned,
-            "execution_time_ms": execution_time_ms,
-        }
-
-        with open(conv_file, "a") as f:
-            f.write(json.dumps(entry) + "\n")
+        cls._append(
+            cls._system_log(),
+            {
+                "timestamp": cls._timestamp(),
+                "level": level,
+                "event": event,
+                "conv_id": conv_id,
+                "db_name": db_name,
+                "user": user,
+                "details": details or {},
+            },
+        )
 
     @staticmethod
     def _hash_query(sql: str) -> str:
         return hashlib.sha256(sql.encode()).hexdigest()[:16]
 
     @classmethod
-    def log_performance(
-        cls,
-        db_name: str,
-        conv_id: str,
-        sql: str,
-        summary: dict,
-        suggestions: list,
-    ):
-        """
-        Stores structured performance history.
-        """
-
-        perf_dir = cls.BASE_DIR / db_name / "logs"
-        perf_dir.mkdir(parents=True, exist_ok=True)
-
-        perf_file = perf_dir / "performance.jsonl"
-
-        query_hash = cls._hash_query(sql)
-
-        entry = {
-            "timestamp": cls._timestamp(),
-            "conv_id": conv_id,
-            "query_hash": query_hash,
-            "sql": sql,
-            "execution_time_ms": summary.get("execution_time_ms"),
-            "total_cost": summary.get("total_cost"),
-            "planning_time_ms": summary.get("planning_time_ms"),
-            "suggestions": suggestions,
-        }
-
-        with open(perf_file, "a") as f:
-            f.write(json.dumps(entry) + "\n")
+    def log_performance(cls, db_name, conv_id, sql, summary, suggestions, user=None):
+        path = paths.workspace_dir(db_name) / "logs" / "performance.jsonl"
+        cls._append(
+            path,
+            {
+                "timestamp": cls._timestamp(),
+                "conv_id": conv_id,
+                "user": user,
+                "query_hash": cls._hash_query(sql),
+                "sql": sql,
+                "execution_time_ms": summary.get("execution_time_ms"),
+                "total_cost": summary.get("total_cost"),
+                "planning_time_ms": summary.get("planning_time_ms"),
+                "suggestions": suggestions,
+            },
+        )

@@ -1,0 +1,218 @@
+erDiagram
+  job_posting { }
+  student_status_history { }
+  fee_demand { }
+  account { }
+  physical_item_movement { }
+  role { }
+  efile_category { }
+  session { }
+  fee_demand_item { }
+  grievance { }
+  gh_room { }
+  otp { }
+  application_step { }
+  department { }
+  award_prize { }
+  paperless_application { }
+  efile { }
+  menu_module { }
+  academic_session { }
+  student_activity { }
+  family_income_declaration { }
+  offer { }
+  menu_item { }
+  hall_room { }
+  semester_performance { }
+  application_type { }
+  rep_nomination { }
+  emergency_contact { }
+  class_attendance { }
+  loan { }
+  address { }
+  special_program_application { }
+  fee_structure { }
+  library_due { }
+  scholarship_scheme { }
+  employee { }
+  curriculum_course { }
+  company { }
+  exam_attendance { }
+  mediclaim_claim { }
+  breadth_choice { }
+  exam_schedule { }
+  student_document { }
+  guesthouse { }
+  mail_recipient { }
+  offering_instructor { }
+  course_feedback { }
+  notice { }
+  curriculum { }
+  salary_slip { }
+  audit_event { }
+  program_switch_application { }
+  login_audit { }
+  medical_leave { }
+  efile_movement { }
+  guardian { }
+  timetable_slot { }
+  job_application { }
+  registration { }
+  admit_card { }
+  course { }
+  gh_booking { }
+  mail_message { }
+  graduation_clearance { }
+  counselling_session { }
+  bank_account { }
+  role_menu_access { }
+  program { }
+  person_identity { }
+  payment { }
+  fee_head { }
+  result { }
+  complaint { }
+  student { }
+  hall { }
+  faculty_advisor { }
+  convocation_registration { }
+  scholarship_award { }
+  person { }
+  data_sharing_consent { }
+  book { }
+  registration_card { }
+  physical_dispatch { }
+  course_offering { }
+  book_copy { }
+  account_role { }
+  assignment_mark { }
+  academic_session o|--o{ faculty_advisor : "to_session_id"
+  academic_session ||--o{ admit_card : "session_id"
+  academic_session ||--o{ breadth_choice : "session_id"
+  academic_session ||--o{ course_offering : "session_id"
+  academic_session ||--o{ faculty_advisor : "from_session_id"
+  academic_session ||--o{ fee_demand : "session_id"
+  academic_session ||--o{ registration_card : "session_id"
+  academic_session ||--o{ rep_nomination : "session_id"
+  academic_session ||--o{ scholarship_award : "session_id"
+  academic_session ||--o{ semester_performance : "session_id"
+  academic_session ||--o{ student_activity : "session_id"
+  account o|--o{ audit_event : "account_id"
+  account o|--o{ grievance : "assigned_to_account_id"
+  account o|--o{ login_audit : "account_id"
+  account ||--o{ account_role : "account_id"
+  account ||--o{ application_step : "approver_account_id"
+  account ||--o{ complaint : "account_id"
+  account ||--o{ efile : "created_by_account_id"
+  account ||--o{ efile_movement : "from_account_id"
+  account ||--o{ efile_movement : "to_account_id"
+  account ||--o{ gh_booking : "booked_by_account_id"
+  account ||--o{ grievance : "account_id"
+  account ||--o{ mail_message : "from_account_id"
+  account ||--o{ mail_recipient : "account_id"
+  account ||--o{ notice : "posted_by_account_id"
+  account ||--o{ otp : "account_id"
+  account ||--o{ physical_dispatch : "handled_by_account_id"
+  account ||--o{ physical_item_movement : "to_account_id"
+  account ||--o{ session : "account_id"
+  application_type ||--o{ paperless_application : "type_id"
+  book ||--o{ book_copy : "book_id"
+  book_copy ||--o{ loan : "copy_id"
+  company ||--o{ job_posting : "company_id"
+  course ||--o{ breadth_choice : "course_id"
+  course ||--o{ course_offering : "course_id"
+  course ||--o{ curriculum_course : "course_id"
+  course_offering ||--o{ exam_schedule : "offering_id"
+  course_offering ||--o{ offering_instructor : "offering_id"
+  course_offering ||--o{ registration : "offering_id"
+  course_offering ||--o{ timetable_slot : "offering_id"
+  curriculum ||--o{ curriculum_course : "curriculum_id"
+  curriculum ||--o{ student : "curriculum_id"
+  department o|--o{ special_program_application : "target_department_id"
+  department ||--o{ course : "department_id"
+  department ||--o{ efile : "department_id"
+  department ||--o{ efile_category : "department_id"
+  department ||--o{ employee : "department_id"
+  department ||--o{ physical_dispatch : "department_id"
+  department ||--o{ program : "department_id"
+  department ||--o{ program_switch_application : "from_department_id"
+  department ||--o{ program_switch_application : "to_department_id"
+  department ||--o{ student : "department_id"
+  efile ||--o{ efile_movement : "efile_id"
+  efile_category ||--o{ efile : "category_id"
+  employee o|--o{ department : "hod_employee_id"
+  employee o|--o{ family_income_declaration : "verified_by_employee_id"
+  employee o|--o{ hall : "warden_employee_id"
+  employee o|--o{ medical_leave : "approved_by_employee_id"
+  employee o|--o{ student_activity : "verified_by_employee_id"
+  employee ||--o{ assignment_mark : "entered_by_employee_id"
+  employee ||--o{ class_attendance : "marked_by_employee_id"
+  employee ||--o{ counselling_session : "counsellor_employee_id"
+  employee ||--o{ faculty_advisor : "employee_id"
+  employee ||--o{ offering_instructor : "employee_id"
+  employee ||--o{ salary_slip : "employee_id"
+  exam_schedule ||--o{ exam_attendance : "exam_id"
+  fee_demand ||--o{ fee_demand_item : "demand_id"
+  fee_demand ||--o{ payment : "demand_id"
+  fee_head ||--o{ fee_demand_item : "head_id"
+  fee_head ||--o{ fee_structure : "head_id"
+  gh_room ||--o{ gh_booking : "gh_room_id"
+  guesthouse ||--o{ gh_room : "guesthouse_id"
+  hall o|--o{ student : "hall_id"
+  hall ||--o{ hall_room : "hall_id"
+  hall_room o|--o{ student : "room_id"
+  job_application ||--o| offer : "job_application_id"
+  job_posting ||--o{ job_application : "posting_id"
+  loan ||--o{ library_due : "loan_id"
+  mail_message ||--o{ mail_recipient : "message_id"
+  menu_item ||--o| role_menu_access : "menu_id"
+  menu_module ||--o{ menu_item : "module_id"
+  paperless_application ||--o{ application_step : "application_id"
+  person ||--o{ account : "person_id"
+  person ||--o{ address : "person_id"
+  person ||--o{ bank_account : "person_id"
+  person ||--o{ emergency_contact : "person_id"
+  person ||--o{ library_due : "person_id"
+  person ||--o{ loan : "person_id"
+  person ||--o{ paperless_application : "applicant_person_id"
+  person ||--o| employee : "person_id"
+  person ||--o| person_identity : "person_id"
+  person ||--o| student : "person_id"
+  physical_dispatch ||--o{ physical_item_movement : "dispatch_id"
+  program ||--o{ curriculum : "program_id"
+  program ||--o{ fee_structure : "program_id"
+  program ||--o{ student : "program_id"
+  registration ||--o{ assignment_mark : "registration_id"
+  registration ||--o{ class_attendance : "registration_id"
+  registration ||--o| course_feedback : "registration_id"
+  registration ||--o| result : "registration_id"
+  role ||--o{ account_role : "role_id"
+  role ||--o| role_menu_access : "role_id"
+  scholarship_scheme ||--o{ scholarship_award : "scheme_id"
+  student o|--o{ paperless_application : "student_id"
+  student ||--o{ admit_card : "student_id"
+  student ||--o{ award_prize : "student_id"
+  student ||--o{ breadth_choice : "student_id"
+  student ||--o{ convocation_registration : "student_id"
+  student ||--o{ counselling_session : "student_id"
+  student ||--o{ exam_attendance : "student_id"
+  student ||--o{ faculty_advisor : "student_id"
+  student ||--o{ family_income_declaration : "student_id"
+  student ||--o{ fee_demand : "student_id"
+  student ||--o{ guardian : "student_id"
+  student ||--o{ job_application : "student_id"
+  student ||--o{ medical_leave : "student_id"
+  student ||--o{ mediclaim_claim : "student_id"
+  student ||--o{ payment : "student_id"
+  student ||--o{ program_switch_application : "student_id"
+  student ||--o{ registration : "student_id"
+  student ||--o{ registration_card : "student_id"
+  student ||--o{ rep_nomination : "student_id"
+  student ||--o{ scholarship_award : "student_id"
+  student ||--o{ semester_performance : "student_id"
+  student ||--o{ special_program_application : "student_id"
+  student ||--o{ student_activity : "student_id"
+  student ||--o{ student_document : "student_id"
+  student ||--o{ student_status_history : "student_id"
+  student ||--o| data_sharing_consent : "student_id"
+  student ||--o| graduation_clearance : "student_id"

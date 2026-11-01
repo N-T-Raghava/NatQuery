@@ -1,0 +1,131 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+\section{Motivation}
+
+Institutional data is rich, but only a few people can ask questions of it. A student wants to know
+in which courses their attendance is short, a head of department wants the five best students in
+their department, and an accounts officer wants the fee demands still unpaid. Each of these is one
+SQL query away, yet in practice each depends on a screen someone built in advance or on a request to
+the administrators. Large language models (LLMs) promise to remove this bottleneck: the user types a
+question and the model writes the query. This is the text-to-SQL problem, and benchmarks such as
+Spider \citep{yu2018spider} and BIRD \citep{li2023bird} show that models have become capable at it.
+
+\section{The Problem: Capable Is Not Safe}
+
+Accuracy on a benchmark is not what stops an ERP from leaking data. Benchmarks measure whether the
+generated query returns the right answer and assume that the asker may see everything. A real
+deployment needs the opposite guarantee: whatever the model writes, \emph{the asker must never
+receive data outside their rights}. Three properties of LLMs make this hard.
+
+\begin{itemize}
+  \item \textbf{The output is untrusted.} A model can hallucinate tables, ignore an instruction, or
+        be steered by a malicious question (prompt injection, \citealp{perez2022ignore}) into
+        producing a query the operator never intended.
+  \item \textbf{Permissions are about people, not queries.} A student may read their own payments but
+        nobody else's; a head of department sees only their department. The same English question
+        must give different, correctly scoped answers to different users.
+  \item \textbf{Production databases are large.} A university ERP has hundreds of columns across many
+        schemas, which a model cannot read in full and which a policy must still cover completely.
+\end{itemize}
+
+Prompting the model to ``only show the user their own data'' is a request, not a control. The
+guarantee has to be enforced by code that does not depend on the model behaving.
+
+\section{NatQuery in Brief}
+
+\emph{NatQuery} is a Python library and command-line tool that turns English questions into
+PostgreSQL queries and runs them only after they have been checked against the asker's rights. Its
+single design rule is:
+
+\begin{quote}
+\emph{The language model proposes SQL. NatQuery decides whether, and in what form, it runs.}
+\end{quote}
+
+The model never connects to the database. Each proposed query is parsed into a syntax tree and
+verified against a role-specific view of the schema, so tables and columns the role may not see do
+not exist for it. Mandatory row filters are then attached, sensitive columns are masked, and only
+the rewritten query is executed, on a read-only connection with time and row limits. A query that
+breaks a rule is returned to the model with a precise reason so that it can repair it; a query that
+cannot be repaired is refused. Who the user is comes from a pluggable authentication layer, what each
+role may do is declared in one policy file, and every step is written to a tamper-evident,
+hash-chained audit log. For databases spread over several schemas, NatQuery also passes the user's
+identity to PostgreSQL row-level security, so that the database enforces the same scopes as a
+second, independent line of defence.
+
+\section{Contributions}
+
+The contributions of this work are:
+
+\begin{enumerate}
+  \item A \textbf{security-first text-to-SQL architecture} in which LLM output is never executed
+        directly: parse, role-view check, row filtering, masking, repair loop and audit
+        (Chapters~\ref{ch:arch} and~\ref{ch:how}).
+  \item A \textbf{policy-driven access model} with pluggable authentication, role inheritance, row
+        filters bound to user attributes, multi-schema support, and database row-level security as a
+        second enforcement layer (Chapters~\ref{ch:how} and~\ref{ch:features}).
+  \item A \textbf{three-part evaluation}: execution accuracy on the public BIRD Mini-Dev benchmark,
+        an adversarial security test on AdventureWorks, and a purpose-built synthetic university ERP
+        (87 tables, 549 columns) with 40 role-specific questions at three difficulty levels
+        (Chapter~\ref{ch:bench}).
+  \item An \textbf{open test bed}: the ERP schema, seed data, policy and question set are released with
+        the code, together with a no-LLM verification pass that separates access-layer errors from
+        model errors.
+\end{enumerate}
+
+Table~\ref{tab:glance} summarises the results that the rest of the report supports.
+
+\begin{table}[htbp]
+\centering
+\caption{NatQuery at a glance: the three evaluation tracks and the code base.}
+\label{tab:glance}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{L{2.6cm} Y Y}
+\toprule
+\hdr \textbf{Track} & \textbf{What is tested} & \textbf{Headline result} \\
+\midrule
+BIRD Mini-Dev & 500 questions, 11 databases, PostgreSQL, security layer on, open model \code{gpt-oss-120b} &
+  45.6\% official execution accuracy (50.6\% with a numerically tolerant scorer); median 1.08\,s and \$0.0004 per question \\
+AdventureWorks security & 3 roles, 227 hostile SQL queries (560 runs), 40 auth/audit checks, 30 natural-language attacks &
+  0 leaks, 0 writes; 511 of 511 must-refuse queries refused; an unprotected text-to-SQL leaked on 7 of 8 comparable attacks \\
+Synthetic university ERP & 10 schemas, 87 tables, 549 columns, 10 roles, row-level security; 40 questions in three levels &
+  51 of 51 database checks; 41 of 41 no-LLM pipeline checks; 28 of 40 questions correct (70\%); all 5 access-control questions safe \\
+Code base & about 5,300 lines of Python in 57 modules &
+  855 tests, about 97\% branch coverage; 96 of 97 manual mutants killed \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Scope and Limitations}
+
+NatQuery targets PostgreSQL and read-only questions. Its accuracy depends on the language model
+behind it; the results reported here use an open-weight model on a free API tier, with limited
+prompt size, and should be read as a lower bound. The ERP test bed is synthetic and its policy was
+written by the same authors as the questions, so it shows that the system handles a database of this
+size and shape, not that any particular real policy is correct. These limits are discussed in
+Chapter~\ref{ch:bench} and Chapter~\ref{ch:conclusion}.
+
+\section{Organisation of the Report}
+
+Table~\ref{tab:organisation} maps the chapters to their content.
+
+\begin{table}[htbp]
+\centering
+\caption{Organisation of the report.}
+\label{tab:organisation}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{L{2.2cm} Y}
+\toprule
+\hdr \textbf{Chapter} & \textbf{Content} \\
+\midrule
+2 & Architecture diagram, components and trust boundaries \\
+3 & How NatQuery works: request path, enforcer, repair loop, schema selection, multi-schema and row-level security, audit \\
+4 & Features: security, access control, accuracy, operations, extensibility and quality \\
+5 & Benchmarking: BIRD Mini-Dev, AdventureWorks security, synthetic ERP \\
+6 & Conclusion, use cases, limitations and future work \\
+Appendices & Policy and schema reference, the 40 ERP questions with results, reproduction \\
+\bottomrule
+\end{tabularx}
+\end{table}

@@ -1,0 +1,151 @@
+erDiagram
+  employee {
+    serial employee_id PK
+    varchar emp_code UK
+    int person_id FK
+    int department_id FK
+    text designation
+    varchar employee_type
+    text display_name
+    text official_email
+    date joined_on
+    boolean is_active
+  }
+  bank_account {
+    serial bank_account_id PK
+    int person_id FK
+    text bank_name
+    text branch_name
+    varchar ifsc
+    varchar account_no
+    boolean aadhaar_linked
+    boolean is_primary
+  }
+  student_status_history {
+    serial status_history_id PK
+    int student_id FK
+    varchar status
+    date active_from
+    date active_to
+    text remark
+  }
+  curriculum {
+    serial curriculum_id PK
+  }
+  department {
+    serial department_id PK
+  }
+  person_identity {
+    int person_id PK
+    varchar aadhaar_no
+    varchar abc_id
+    varchar nad_id
+  }
+  program {
+    serial program_id PK
+  }
+  person {
+    serial person_id PK
+    text full_name
+    text name_hindi
+    boolean hindi_name_verified
+    char gender
+    date date_of_birth
+    varchar blood_group
+    varchar religion
+    varchar nationality
+    varchar mother_tongue
+    varchar marital_status
+    text photo_path
+    text personal_email
+    text institute_email UK
+    varchar mobile_no
+  }
+  emergency_contact {
+    serial emergency_contact_id PK
+    int person_id FK
+    text contact_name
+    varchar relationship
+    varchar contact_no
+    text address
+  }
+  academic_session {
+    serial session_id PK
+  }
+  student {
+    serial student_id PK
+    varchar roll_no UK
+    int person_id FK
+    varchar guid UK
+    int program_id FK
+    int department_id FK
+    int curriculum_id FK
+    smallint admission_year
+    varchar nature_of_admission
+    varchar category
+    text sub_category
+    text pwd_status
+    text native_state
+    int hall_id FK
+    int room_id FK
+    boolean hall_attached
+    varchar allotted_eaa
+    smallint current_semester
+    varchar current_status
+    date smartcard_issued_on
+    smallint year_of_pass
+  }
+  hall {
+    serial hall_id PK
+  }
+  faculty_advisor {
+    serial advisor_assignment_id PK
+    int student_id FK
+    int employee_id FK
+    int from_session_id FK
+    int to_session_id FK
+  }
+  address {
+    serial address_id PK
+    int person_id FK
+    varchar address_type
+    text address_line
+    text village_town_city
+    text police_station
+    varchar pin_code
+    text district
+    text state
+    text country
+  }
+  guardian {
+    serial guardian_id PK
+    int student_id FK
+    varchar relation
+    text name
+    text profession
+    text education
+    varchar mobile_no
+    varchar landline_no
+    text email
+  }
+  hall_room {
+    serial room_id PK
+  }
+  academic_session o|--o{ faculty_advisor : "to_session_id"
+  academic_session ||--o{ faculty_advisor : "from_session_id"
+  curriculum ||--o{ student : "curriculum_id"
+  department ||--o{ employee : "department_id"
+  department ||--o{ student : "department_id"
+  employee ||--o{ faculty_advisor : "employee_id"
+  hall o|--o{ student : "hall_id"
+  hall_room o|--o{ student : "room_id"
+  person ||--o{ address : "person_id"
+  person ||--o{ bank_account : "person_id"
+  person ||--o{ emergency_contact : "person_id"
+  person ||--o| employee : "person_id"
+  person ||--o| person_identity : "person_id"
+  person ||--o| student : "person_id"
+  program ||--o{ student : "program_id"
+  student ||--o{ faculty_advisor : "student_id"
+  student ||--o{ guardian : "student_id"
+  student ||--o{ student_status_history : "student_id"

@@ -1,0 +1,127 @@
+\chapter{Conclusion and Use Cases}
+\label{ch:conclusion}
+
+\section{Conclusion}
+
+This work set out to make natural-language access to a university ERP safe enough to try on real users.
+The answer NatQuery gives is architectural: a language model may propose SQL, but it is never trusted to
+run it. Every query is parsed, checked against the asker's role view, rewritten with row filters and
+masks, regenerated, recorded before it runs, and executed read-only, with PostgreSQL row-level security
+repeating the row scopes underneath.
+
+The evidence supports three claims. First, the security layer is almost free: on BIRD Mini-Dev it
+rejected 2\% of first attempts, turned no correct answer into a wrong one, and added 4\,ms to a request
+that takes a second, while an open 120-billion-parameter model reached 45.6\% execution accuracy, ahead of
+GPT-4 given the same hints. Second, it holds under attack: 560 hostile-SQL runs and 30 natural-language
+attacks leaked nothing, where an unprotected text-to-SQL leaked on 7 of 8 comparable attacks. Third, it
+scales: on a synthetic university ERP with 87 tables, 549 columns and 10 roles, the access layer returned
+exactly the right rows on every question, and the system answered 28 of 40 correctly with all five
+access-control traps handled safely.
+
+Equally important is what the work does not show. Accuracy on the ERP depends on the model and on
+descriptions of the schema, and the final figure comes from improvements designed after reading the
+first run's failures. The attack list was written by the authors of the defences. The real ERP's schema
+and policy remain unknown. These are the first things to address before any real deployment.
+
+\section{Use Cases}
+
+Table~\ref{tab:usecases} lists the intended uses at a university. They are possible uses that the test
+bed exercises, not deployments.
+
+\begin{table}[htbp]
+\centering
+\caption{Intended use cases.}
+\label{tab:usecases}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{2.6cm} Y Y}
+\toprule
+\hdr \textbf{User} & \textbf{Example question} & \textbf{What the policy guarantees} \\
+\midrule
+Student & ``In which courses is my attendance below 95 percent?'' & Own rows only; no other student's data; secrets never visible \\
+Faculty & ``Which of my advisees have an unpaid library fine?'' & Own courses and advisees; own salary; no other staff pay \\
+Head of department & ``Who are the five students in my department with the highest CGPA?'' & Department scope; no other department; masked fields stay masked \\
+Accounts section & ``How many fee payments failed this semester?'' & Finance tables for the role; no academic detail beyond identification \\
+Library staff & ``Which books are overdue by more than a month?'' & Library tables and the minimum student fields needed \\
+Hall office & ``How many residents of my hall have unpaid dues?'' & One hall only \\
+Placement cell & ``For companies with over 90 applications, what percentage received offers?'' & Placement tables only \\
+Administrator & ``Show recent query activity and verify the audit chain.'' & Audit commands; permanent secrets stay hidden even for admin \\
+Help desk & Common ERP help-desk questions answered without a human & The same row scoping as the logged-in user \\
+Other institutions & Any PostgreSQL system with roles and personal records & Policy file and schema description replace the ERP-specific parts \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Before a Real Deployment}
+
+\begin{table}[htbp]
+\centering
+\caption{Deployment checklist.}
+\label{tab:checklist}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y}
+\toprule
+\hdr \textbf{Step} & \textbf{Why} \\
+\midrule
+Write the policy against the real schema and review every role's view & The policy is only as good as its author; \code{natquery policy check} validates it \\
+Use a dedicated SELECT-only database account and row-level security & A second line of defence beneath the enforcer \\
+Decide where the model runs & The question and the role-visible schema leave the machine; an on-premises model keeps them in; row data never leaves \\
+Ship the audit log off the machine and set the audit key & The chain is tamper-evident, not tamper-proof \\
+Add a notice when a row filter changed an answer & Silent scoping can mislead a user, although nothing leaks \\
+Run an outside red team & The attack list was written by the authors \\
+Add per-device throttling and shared session storage & Per-user lockout can be abused; in-memory limits suit one process \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Limitations}
+
+\begin{table}[htbp]
+\centering
+\caption{Known limitations.}
+\label{tab:limits}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.8cm} Y}
+\toprule
+\hdr \textbf{Limitation} & \textbf{Detail} \\
+\midrule
+Silent scoping & A row filter changes totals without telling the user: ``how many employees work here'' returns 1 for an employee; the model cannot see filters, so some ``my'' questions are judged unanswerable \\
+No minimum group size & A role allowed to aggregate can learn statistics about rows it cannot see \\
+Heuristic input guard & A speed bump and audit signal; the enforcer is the boundary \\
+Single process & Sessions and rate limits are in memory; the audit chain is tamper-evident only \\
+One role per query & By design, for simplicity of reasoning and audit; no union of roles \\
+PostgreSQL only & Other engines need a backend class and a dialect name \\
+Multi-schema naming & Tables that exist in several schemas must be written in full by the model, which costs repair attempts \\
+Row-level security covers rows only & Column hiding and masking live in the enforcer \\
+Evaluation scope & Synthetic ERP, one model, one run each, partly tuned on the benchmark questions \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Future Work}
+
+\begin{table}[htbp]
+\centering
+\caption{Future work.}
+\label{tab:future}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4cm} Y}
+\toprule
+\hdr \textbf{Direction} & \textbf{Detail} \\
+\midrule
+Real ERP trial & Connect to the institute ERP (or a copy), collect real help-desk questions and write the real policy \\
+Scope-aware answers & Tell the user when a filter limited the result; let the model know which tables are already scoped to the user \\
+Aggregate protection & Minimum group sizes and noise for inference-prone aggregates \\
+Stronger models & Re-run the ERP and BIRD tracks with a larger or on-premises model and higher reasoning effort \\
+Outside security review & Independent red team and a published attack corpus \\
+Production layer & Network API, single sign-on (LDAP or OIDC), shared limiter and session store, concurrency testing \\
+More engines & Backends for MySQL and Oracle through the backend interface \\
+Learning from feedback & Use rejected and repaired queries to improve descriptions and value hints automatically \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier

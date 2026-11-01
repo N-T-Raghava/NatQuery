@@ -1,0 +1,333 @@
+\chapter{How NatQuery Works}
+\label{ch:how}
+
+This chapter follows a question through NatQuery and explains each mechanism: the request path, the
+policy and role view, the SQL enforcer, the repair loop, schema selection for large databases,
+multi-schema support with row-level security, execution limits, the audit log and authentication.
+
+\section{The Request Path}
+
+Table~\ref{tab:path} lists the thirteen steps of Figure~\ref{fig:arch} with what happens at each and
+what happens when it fails. A failure at any step ends the request with a generic message and an opaque
+reference id; the details go only to the audit log.
+
+\begin{table}[htbp]
+\centering
+\caption{The thirteen steps of a request.}
+\label{tab:path}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{0.7cm} L{3.1cm} Y L{3.3cm}}
+\toprule
+\hdr \textbf{\#} & \textbf{Step} & \textbf{What happens} & \textbf{On failure} \\
+\midrule
+1 & Session check & The token is validated and the identity re-read from the provider, so a disabled account or a changed role takes effect at once & Request refused \\
+2 & Role selection & The highest-priority role the user holds, or the one the user selected; never a union of roles & Refused if no policy role \\
+3 & Input guard, limits & Length and character checks, injection patterns, per-user rate and model-call limits & Refused, audited \\
+4 & Role view & Tables and columns the role may use, masks and row filters, built from the policy & Refused if the view is empty \\
+5 & Schema selection & Small views go whole; large views are ranked and trimmed (Section~\ref{sec:select}) & --- \\
+6 & Prompt & Output contract, access rules, schema with value hints, and the question & --- \\
+7 & Model call & One SQL statement is requested; the reply is cleaned (fences, comments) & Provider error: generic message \\
+8 & Enforcement & Parse, check, rewrite, regenerate (Section~\ref{sec:enforcer}) & Fixable: repair loop; otherwise refused \\
+9 & Audit record & ``authorized'' record with model SQL, executed SQL, tables, masks, filters & \textbf{Nothing executes} \\
+10 & Execution & Read-only, time- and row-bounded, under the database role and with identity settings & Sanitised error to repair loop \\
+11 & Result guard & Pattern redaction and size caps on values & --- \\
+12 & Audit record & ``completed'' record with outcome and timing & --- \\
+13 & Answer & Rows, columns, notes (for example masking or truncation) and the reference id & --- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Policy and Role View}
+
+The policy is one YAML file. A role is a block in it; the names ``student'', ``faculty'' or ``admin''
+mean nothing to the code. Table~\ref{tab:policykeys} lists the keys, and Listing~\ref{lst:policy} shows an
+excerpt of the ERP policy.
+
+\begin{table}[htbp]
+\centering
+\caption{Policy keys.}
+\label{tab:policykeys}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{5.3cm} Y}
+\toprule
+\hdr \textbf{Key} & \textbf{Meaning} \\
+\midrule
+\code{roles.<name>.inherits} & Roles whose grants this role starts from; child blocks override per table \\
+\code{roles.<name>.priority} & Decides which role a multi-role user runs under \\
+\code{tables.<t>.columns} & Visible columns, or \code{"*"}; \code{schema.*} grants a whole schema \\
+\code{tables.<t>.deny_columns} & Columns removed from the above \\
+\code{tables.<t>.masked} & \code{column: strategy}; value replaced at SELECT time, selectable but never filterable \\
+\code{tables.<t>.row_filter} & Condition ANDed onto every access to the table; \code{:placeholders} bound from the identity \\
+\code{global_deny} & Tables, \code{table.column} and \code{*.column} patterns no role can see, admin included \\
+\code{allowed_functions} & Extra SQL functions beyond the built-in allow-list \\
+\code{defaults} / per-role limits & \code{max_rows} (500), \code{statement_timeout_ms} (5000), \code{max_joins} (6), subquery depth, SQL length \\
+\code{permissions} & \code{can_view_sql}, \code{can_view_plan}, \code{can_manage_users}, \code{can_view_audit}, \code{can_refresh_schema} \\
+\code{db_role}, \code{db_session_vars} & Database role to drop to, and identity attributes to hand to row-level security \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{lstlisting}[caption={Excerpt of the ERP policy (student role). Row filters use placeholders bound from the user's identity.}, label={lst:policy}]
+global_deny:
+  tables: [auth.session, auth.otp]
+  columns: ['*.password_hash', '*.token_hash', people.person_identity.aadhaar_no]
+db_session_vars:
+  erp.role: '@role'
+  erp.student_id: student_id
+roles:
+  student:
+    inherits: [erp_base]
+    priority: 10
+    tables:
+      people.student:
+        columns: '*'
+        row_filter: student_id = :student_id
+      acad.result:
+        columns: '*'
+        row_filter: registration_id IN (SELECT registration_id
+                    FROM acad.registration WHERE student_id = :student_id)
+\end{lstlisting}
+
+The role view is built from the policy and the extracted schema. It contains only granted tables and
+columns, the masks and the row filters, and a prompt-facing copy for the model. Because the view is the
+only schema the model and the enforcer ever see, a hidden table is not forbidden: it does not exist.
+
+\section{The SQL Enforcer}
+\label{sec:enforcer}
+
+The enforcer turns the model's text into SQL that is safe to run. It works on a syntax tree built with the
+\texttt{sqlglot} parser \citep{sqlglot}, in the stages of Figure~\ref{fig:enforcer}, and finally
+\emph{regenerates} the SQL from the tree, so that no byte the model wrote reaches the database.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tikzpicture}[
+  st/.style={draw=nqblue, fill=nqlight, rounded corners=2pt, minimum width=3.1cm, minimum height=1.2cm, align=center, font=\footnotesize, text width=2.9cm},
+  fl/.style={-{Latex[length=2mm]}, thick, nqblue}]
+\node[draw=nqred, dashed, rounded corners=2pt, minimum width=3.1cm, minimum height=1.2cm, align=center, font=\footnotesize] (in) at (0,0) {Model text (untrusted)};
+\node[st] (a) at (4.1,0) {\textbf{1 Parse}\\one SELECT only};
+\node[st] (b) at (8.2,0) {\textbf{2 Allow-list}\\constructs and functions};
+\node[st] (c) at (12.3,0) {\textbf{3 Resolve}\\names against the role view};
+\node[st] (d) at (12.3,-2) {\textbf{4 Row filters}\\wrap every table reference};
+\node[st] (e) at (8.2,-2) {\textbf{5 Masks}\\display-only columns};
+\node[st] (f) at (4.1,-2) {\textbf{6 Limits}\\LIMIT, joins, depth};
+\node[draw=nqgreen, rounded corners=2pt, minimum width=3.1cm, minimum height=1.2cm, align=center, font=\footnotesize] (out) at (0,-2) {\textbf{7 Regenerate}\\safe SQL for the database};
+\foreach \x/\y in {in/a,a/b,b/c,c/d,d/e,e/f,f/out} \draw[fl] (\x) -- (\y);
+\end{tikzpicture}}
+\caption{Stages of the SQL enforcer. A rule violation at any stage ends in a refusal or, if fixable, a repair request.}
+\label{fig:enforcer}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{What the enforcer rejects or changes.}
+\label{tab:enforcer}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.1cm} Y L{3.9cm}}
+\toprule
+\hdr \textbf{Rule} & \textbf{Effect} & \textbf{Example blocked} \\
+\midrule
+Statement type & Only SELECT and set operations; no INSERT, UPDATE, DELETE, DDL, INTO or row locks; one statement only & \code{DROP TABLE x}; stacked statements \\
+Constructs & No recursive CTEs, LATERAL, table functions, bind parameters or catalog casts & \code{WITH RECURSIVE ...} \\
+Functions & Allow-list only (aggregates, \code{COALESCE}, \code{CASE}, date and string functions) & \code{pg_sleep}, \code{pg_read_file}, \code{lo_import} \\
+Name resolution & Every table and column must exist in the role view; hidden and non-existent names give the same error & Hidden table, hidden column \\
+Whole-row references & A table name used as a value is refused, since it would return hidden columns & \code{SELECT employee::text FROM employee} \\
+Row filters & Each table reference, in joins, subqueries, CTEs and UNIONs, is replaced by a filtered subquery; identity values are validated and bound as literals & \code{OR TRUE}, self-join, UNION bypasses \\
+Masked columns & May be selected and are replaced by the mask; any use in WHERE, JOIN, GROUP BY, ORDER BY, functions or aggregates is refused (no oracle) & \code{WHERE} or \code{ORDER BY} on a masked column \\
+Resource limits & No cross joins (including \code{ON true}); joins, nesting, SQL length and syntax-tree size capped; \code{LIMIT} enforced & Cartesian products, \code{repeat('a', 10^9)} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{A Worked Example}
+\label{sec:example}
+
+Take the question \emph{``Which library fines have I not paid yet, and for which books?''} asked by a
+student of the synthetic ERP. The model returns an ordinary query that knows nothing of the user's
+rights. The enforcer replaces the two personal tables by filtered subqueries bound to the caller's
+\code{person_id}, adds a row cap, and leaves the shared catalogue tables untouched
+(Listing~\ref{lst:example}). The student cannot see another person's fines even if the model forgets to
+filter.
+
+\begin{lstlisting}[caption={Model SQL and executed SQL for one question (identity value from the synthetic data).}, label={lst:example}]
+-- SQL written by the model
+SELECT d.reason, d.amount, b.title
+FROM lib.library_due d
+JOIN lib.loan l ON l.loan_id = d.loan_id
+JOIN lib.book_copy bc ON bc.copy_id = l.copy_id
+JOIN lib.book b ON b.book_id = bc.book_id
+WHERE d.status = 'UNPAID'
+
+-- SQL regenerated by the enforcer and executed
+SELECT d.reason AS reason, d.amount AS amount, b.title AS title
+FROM (SELECT * FROM lib.library_due WHERE person_id = '1487') AS d
+JOIN (SELECT * FROM lib.loan WHERE person_id = '1487') AS l ON l.loan_id = d.loan_id
+JOIN lib.book_copy AS bc ON bc.copy_id = l.copy_id
+JOIN lib.book AS b ON b.book_id = bc.book_id
+WHERE d.status = 'UNPAID'
+LIMIT 200
+\end{lstlisting}
+
+\section{The Repair Loop}
+
+Models often make small mistakes that a precise message can fix. When the enforcer or the database
+rejects a statement, the error is classified (Table~\ref{tab:errors}), stripped of anything sensitive and
+sent back with the failed SQL, and the model tries again. At most two repairs are made (configurable); a
+statement that still fails is refused. Policy violations are never ``repaired'' into a way around the
+policy: the hint tells the model to use only what the schema shows.
+
+\begin{table}[htbp]
+\centering
+\caption{Error classes used to give the model a targeted hint.}
+\label{tab:errors}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{3.8cm} Y}
+\toprule
+\hdr \textbf{Class} & \textbf{Typical cause and hint} \\
+\midrule
+\code{SYNTAX_ERROR} & Malformed SQL; return one valid statement \\
+\code{UNDEFINED_TABLE} / \code{UNDEFINED_COLUMN} & Name not in the schema; use only listed names, or answer ``unanswerable'' \\
+\code{AMBIGUOUS_COLUMN} & Column exists in several joined tables; qualify it \\
+\code{GROUP_BY_ERROR} & Selected column neither grouped nor aggregated \\
+\code{JOIN_ERROR} & Missing or invalid join condition; every JOIN needs an ON clause \\
+\code{TYPE_ERROR} & Operator or cast on the wrong type \\
+\code{POLICY} & Rule broken (cross join, display-only column misuse, unsupported construct) \\
+\code{UNKNOWN} & Anything else; generic retry \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Schema Selection for Large Databases}
+\label{sec:select}
+
+A university ERP has far more schema than fits in a free-tier prompt. NatQuery therefore sends a small
+view whole (up to 250 columns and 20 tables) and, for larger ones, selects the relevant tables in four
+steps.
+
+\begin{enumerate}
+  \item \textbf{Rank.} Each table gets a score from the words it shares with the question,
+        weighted by rarity so that words like \emph{id} or \emph{date} count for little:
+        \[
+          \mathrm{score}(t) = \sum_{w \in q \cap T_t} \omega_{t,w}\,\log\!\Bigl(1 + \tfrac{N}{\mathrm{df}_w}\Bigr),
+        \]
+        where $T_t$ are the words of table $t$ (name, description, synonyms, columns), $N$ the number
+        of tables, $\mathrm{df}_w$ the number of tables containing $w$, and $\omega_{t,w}$ is 3 for a
+        word in the table name, 2 for the description or synonyms and 1 for a column name.
+  \item \textbf{Connect.} Take the top five tables, add their foreign-key neighbours and the tables
+        that bridge them (up to three hops). If more than 20 result, keep the best ranked, then those
+        connected to the most chosen tables.
+  \item \textbf{Add lookups.} Small tables (at most eight columns) referenced by a chosen table, such as
+        department, program or session, are added: they are cheap and are how an id becomes a name.
+  \item \textbf{Hint values.} Columns with few distinct values show them (for example
+        \code{status -- values: 'FAILED', 'SUCCESS'}), so the model does not guess spellings. Hints are
+        collected once by an administrator, shown only for columns the role may see, and never for
+        masked or secret-looking columns.
+\end{enumerate}
+
+If the model still answers ``unanswerable'' on a trimmed schema, the request is retried once with a wider
+selection (top ten tables, up to 32) before the user is told the data is not available.
+
+\section{Several Schemas and Database Row-Level Security}
+\label{sec:rls}
+
+\paragraph{Multi-schema mode.} With \code{db_schemas: [people, acad, fin, ...]} every table is named
+\code{schema.table} in the prompt, the policy and the enforcer, and grants accept \code{fin.*}. A bare
+name that exists in exactly one visible schema is completed automatically; one that exists in several
+is returned to the model as a fixable error. Schema extraction reads PostgreSQL's catalogs, so the
+connecting login needs no table privileges.
+
+\paragraph{Row-level security as a second line of defence.} The enforcer's row filters and the
+database's policies say the same thing twice. For each query NatQuery sends the user's role and identity
+as transaction-local settings and then drops to a low-privilege database role:
+
+\begin{lstlisting}[caption={What the database receives before the enforced query.}, label={lst:rls}]
+SELECT set_config('erp.role', 'student', true);
+SELECT set_config('erp.student_id', '1487', true);
+SET LOCAL ROLE erp_ro;
+-- enforced query runs here
+\end{lstlisting}
+
+A policy on each protected table reads these settings, so a bug in the application layer would still be
+met by the database (Listing~\ref{lst:rlspol}). With no settings, a role sees no rows.
+
+\begin{lstlisting}[caption={A row-level security policy of the ERP (excerpt).}, label={lst:rlspol}]
+CREATE POLICY erp_ro_scope ON lib.loan FOR SELECT TO erp_ro
+  USING (person_id = auth.ctx_int('person_id')
+         OR auth.ctx_role() IN ('library', 'admin'));
+\end{lstlisting}
+
+Row-level security covers rows only. Column hiding and masking live in the enforcer, except for the
+secret columns, which the database role is never granted.
+
+\section{Execution Safeguards}
+
+Table~\ref{tab:exec} lists what bounds the execution of a validated query. All values are defaults that
+the policy can change.
+
+\begin{table}[htbp]
+\centering
+\caption{Execution safeguards.}
+\label{tab:exec}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y}
+\toprule
+\hdr \textbf{Safeguard} & \textbf{Detail} \\
+\midrule
+Read-only transaction & Always rolled back, never committed \\
+Statement timeout & 5 seconds by default (\code{statement_timeout_ms}) \\
+Row cap & 500 rows by default, enforced in the SQL and again when fetching \\
+Pooled connections & Connections are checked out per request and reset afterwards \\
+Database role & Optional \code{SET LOCAL ROLE} to a SELECT-only role \\
+Rate limits & 20 questions per minute and 120 model calls per hour per user by default \\
+Generic user errors & Users see a generic message and a reference id; details go to the audit log; database errors are sanitised before reaching the model \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{The Audit Log}
+
+Every request writes JSON lines to an append-only file, each carrying the hash of the previous record.
+With records $r_i$, genesis hash $h_0$ (64 zeros) and canonical JSON encoding,
+\[
+  h_i = \mathrm{SHA\text{-}256}\bigl(h_{i-1} \,\Vert\, r_i\bigr),
+\]
+or $\mathrm{HMAC}_K$ with SHA-256 when the key $K$ is set in the environment. Editing, deleting or
+re-ordering any past record breaks the chain, which \code{natquery audit verify} checks. The
+``authorized'' record is written \emph{before} the query runs, and if that write fails the query does
+not run. The chain is tamper-\emph{evident}, not tamper-proof: without a key, someone who can rewrite
+the whole file can forge a consistent chain, and cutting records off the end is not detectable by the
+chain alone, so the log should be shipped off the machine.
+
+\section{Authentication and Sessions}
+
+Who the user is comes from an authentication provider behind a small interface; the built-in provider
+keeps local accounts, and others (LDAP, single sign-on, the ERP's own session) can be registered.
+Table~\ref{tab:auth} lists the controls of the built-in provider.
+
+\begin{table}[htbp]
+\centering
+\caption{Authentication and session controls.}
+\label{tab:auth}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{L{4.2cm} Y}
+\toprule
+\hdr \textbf{Control} & \textbf{Detail} \\
+\midrule
+Password storage & scrypt (memory-hard, from the Python standard library), constant-time comparison \\
+Account lockout & After repeated failures an account is locked for a period \\
+No account enumeration & Wrong password and unknown user give the same message \\
+Identity attributes & Roll number, employee id, department and so on are attached to the identity and bound into row filters \\
+Sessions & Idle timeout (15 minutes) and absolute timeout (8 hours) by default; tokens are opaque; identity re-read on every request \\
+Role changes & A role change or disabled account takes effect on the next request \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\FloatBarrier
