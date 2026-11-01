@@ -1,0 +1,76 @@
+# NatQuery access policy (example for an ERP-style schema).
+# Roles are plain names. Add a role = add a block. No code change needed.
+version: 1
+
+defaults:                  # applied to every role unless it overrides them
+  max_rows: 200
+  statement_timeout_ms: 5000
+  max_joins: 5
+
+# Nothing below can ever be seen by any role, including admin.
+global_deny:
+  tables: [erp_users]
+  columns: ["*.password_hash", "*.aadhaar_no"]
+
+# Extra functions you want to allow beyond the built-in safe list (optional).
+allowed_functions: []
+
+redaction_patterns:        # applied to result VALUES as a last line of defence
+  aadhaar: '\b\d{4}\s?\d{4}\s?\d{4}\b'
+  phone:   '\b[6-9]\d{9}\b'
+
+roles:
+  student:
+    priority: 10
+    description: A student sees only their own academic and fee records plus the public catalogue.
+    limits: {max_rows: 100}
+    redact: [aadhaar, phone]
+    tables:
+      students:
+        columns: [roll_no, name, email, department, year, cgpa, hall]
+        row_filter: "roll_no = :roll_no"            # :roll_no comes from the user's identity
+      enrollments:
+        columns: [roll_no, course_id, semester, grade, marks]
+        row_filter: "roll_no = :roll_no"
+      fees:
+        columns: [roll_no, semester, amount_due, amount_paid, status]
+        row_filter: "roll_no = :roll_no"
+      courses:                                       # public catalogue: all rows
+        columns: [course_id, title, credits, department, semester]
+      departments: {columns: "*"}
+      faculty:                                       # public directory: no contact details
+        columns: [emp_id, name, department, designation]
+
+  teacher:
+    priority: 20
+    description: A teacher sees the students enrolled in their own courses, and their own salary.
+    limits: {max_rows: 300}
+    redact: [aadhaar]
+    tables:
+      students:
+        columns: [roll_no, name, email, department, year, cgpa]
+        masked: {email: email}                       # show ***@domain, never the full address
+        row_filter: >-
+          roll_no IN (SELECT e.roll_no FROM enrollments e
+                      JOIN courses c ON c.course_id = e.course_id
+                      WHERE c.instructor_emp_id = :emp_id)
+      enrollments:
+        columns: [roll_no, course_id, semester, grade, marks]
+        row_filter: "course_id IN (SELECT course_id FROM courses WHERE instructor_emp_id = :emp_id)"
+      courses: {columns: "*"}
+      departments: {columns: "*"}
+      faculty:
+        columns: [emp_id, name, department, designation]
+      salaries:
+        columns: [emp_id, month, gross, net]
+        row_filter: "emp_id = :emp_id"
+
+  admin:
+    priority: 100
+    description: ERP administrator - everything except the globally denied data.
+    inherits: [teacher]
+    permissions: {can_view_sql: true, can_view_plan: true, can_manage_users: true,
+                  can_view_audit: true, can_refresh_schema: true}
+    limits: {max_rows: 1000, max_joins: 8}
+    tables:
+      "*": {columns: "*"}                            # wildcard supersedes the inherited teacher grants
