@@ -1,0 +1,155 @@
+erDiagram
+  notice {
+    serial notice_id PK
+    text title
+    text body
+    int posted_by_account_id FK
+    varchar audience
+    timestamptz posted_at
+    timestamptz expires_at
+  }
+  account {
+    serial account_id PK
+  }
+  physical_item_movement {
+    serial item_movement_id PK
+    int dispatch_id FK
+    int to_account_id FK
+    varchar status
+    timestamptz moved_at
+  }
+  efile_movement {
+    serial movement_id PK
+    int efile_id FK
+    int from_account_id FK
+    int to_account_id FK
+    timestamptz sent_at
+    timestamptz received_at
+    text remarks
+  }
+  efile_category {
+    serial category_id PK
+    int department_id FK
+    text name
+  }
+  grievance {
+    serial grievance_id PK
+    int account_id FK
+    varchar category
+    text description
+    varchar status
+    int assigned_to_account_id FK
+    timestamptz created_at
+  }
+  application_step {
+    serial step_id PK
+    int application_id FK
+    smallint step_no
+    int approver_account_id FK
+    varchar action
+    text remarks
+    timestamptz acted_at
+  }
+  department {
+    serial department_id PK
+  }
+  paperless_application {
+    serial application_id PK
+    int type_id FK
+    int applicant_person_id FK
+    int student_id FK
+    timestamptz submitted_at
+    varchar status
+    jsonb payload
+  }
+  efile {
+    serial efile_id PK
+    int category_id FK
+    int department_id FK
+    text subject
+    int created_by_account_id FK
+    varchar status
+    timestamptz created_at
+  }
+  mail_message {
+    serial message_id PK
+    int from_account_id FK
+    text subject
+    text body
+    timestamptz sent_at
+  }
+  counselling_session {
+    serial session_id PK
+    int student_id FK
+    int counsellor_employee_id FK
+    timestamptz scheduled_at
+    varchar status
+    text notes
+  }
+  application_type {
+    serial type_id PK
+    varchar code UK
+    text name
+    varchar category
+  }
+  complaint {
+    serial complaint_id PK
+    int account_id FK
+    varchar category
+    text subject
+    text description
+    varchar status
+    timestamptz created_at
+    timestamptz resolved_at
+  }
+  student {
+    serial student_id PK
+  }
+  employee {
+    serial employee_id PK
+  }
+  person {
+    serial person_id PK
+  }
+  physical_dispatch {
+    serial dispatch_id PK
+    int department_id FK
+    varchar direction
+    varchar item_type
+    text description
+    text party
+    varchar ref_no
+    date dated
+    int handled_by_account_id FK
+  }
+  mail_recipient {
+    serial mail_recipient_id PK
+    int message_id FK
+    int account_id FK
+    timestamptz read_at
+  }
+  account o|--o{ grievance : "assigned_to_account_id"
+  account ||--o{ application_step : "approver_account_id"
+  account ||--o{ complaint : "account_id"
+  account ||--o{ efile : "created_by_account_id"
+  account ||--o{ efile_movement : "from_account_id"
+  account ||--o{ efile_movement : "to_account_id"
+  account ||--o{ grievance : "account_id"
+  account ||--o{ mail_message : "from_account_id"
+  account ||--o{ mail_recipient : "account_id"
+  account ||--o{ notice : "posted_by_account_id"
+  account ||--o{ physical_dispatch : "handled_by_account_id"
+  account ||--o{ physical_item_movement : "to_account_id"
+  application_type ||--o{ paperless_application : "type_id"
+  department ||--o{ efile : "department_id"
+  department ||--o{ efile_category : "department_id"
+  department ||--o{ physical_dispatch : "department_id"
+  efile ||--o{ efile_movement : "efile_id"
+  efile_category ||--o{ efile : "category_id"
+  employee ||--o{ counselling_session : "counsellor_employee_id"
+  mail_message ||--o{ mail_recipient : "message_id"
+  paperless_application ||--o{ application_step : "application_id"
+  person ||--o{ paperless_application : "applicant_person_id"
+  physical_dispatch ||--o{ physical_item_movement : "dispatch_id"
+  student o|--o{ paperless_application : "student_id"
+  student ||--o{ counselling_session : "student_id"
