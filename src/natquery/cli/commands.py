@@ -1,259 +1,165 @@
+"""Workspace/config commands (run by whoever operates the machine, not by end users)."""
+
 import json
-from pathlib import Path
 from getpass import getpass
 from urllib.parse import urlparse
+
+from natquery.config import paths
 from natquery.config.settings import Settings
-from natquery.observability.performance_api import (
-    get_last_run,
-    compare_last_two_runs,
-    get_slowest_queries,
-)
-
-
-BASE_DIR = Path.home() / ".natquery"
-CONFIG_FILE = BASE_DIR / "config.json"
+from natquery.security.redaction import redact_secrets
 
 
 def extract_db_name_from_dsn(dsn: str) -> str:
-    """
-    Extract database name from a PostgreSQL DSN.
-    Supports both URL format (postgresql://) and key-value format (dbname=).
-    """
+    """Database name from a URL-style or key=value PostgreSQL DSN."""
     parsed = urlparse(dsn)
-
-    if parsed.scheme:  # URL format
-        db_name = parsed.path.lstrip("/").split("?")[
-            0
-        ]  # Remove leading / and query params
-        return db_name if db_name else "unknown_db"
-
-    # Fallback: key-value DSN (e.g., "dbname=mydb user=postgres host=localhost")
-    parts = dsn.split()
-    for part in parts:
+    if parsed.scheme:
+        return parsed.path.lstrip("/").split("?")[0] or "unknown_db"
+    for part in dsn.split():
         if part.startswith("dbname="):
             return part.split("=", 1)[1]
-
     return "unknown_db"
 
 
+def _ask_workspace_name(suggested: str = "") -> str:
+    while True:
+        name = (
+            input(
+                f"Workspace / database name{f' [{suggested}]' if suggested else ''}: "
+            ).strip()
+            or suggested
+        )
+        try:
+            return paths.safe_name(name)
+        except ValueError as e:
+            print(e)
+
+
 def connect_command(dsn_arg=None):
-    """
-    Setup for NatQuery.
-    If dsn_arg is provided, extracts DB name and uses it as workspace.
-    Otherwise, runs interactive setup for standard or DSN connections.
-    """
-
+    """Create/refresh a workspace: DB connection + LLM settings (saved 0600)."""
     print("============ NatQuery Setup ============")
+    paths.ensure_private_dir(paths.base_dir())
 
-    BASE_DIR.mkdir(exist_ok=True)
-
-    # If DSN was provided as argument
     if dsn_arg:
-        db_name = extract_db_name_from_dsn(dsn_arg)
-        workspace_name = db_name
-
-        print(f"Your Datbase Name: {db_name}")
-        print(f"Workspace Name: {workspace_name}")
-
+        print(
+            "Note: a DSN typed on the command line is visible in shell history and process lists."
+        )
+        print(
+            "      Prefer the interactive prompts, or set NATQUERY_DB_DSN in the environment."
+        )
+        suggested = extract_db_name_from_dsn(dsn_arg)
+        db_name = _ask_workspace_name(suggested if suggested != "unknown_db" else "")
         config = {
             "connection_type": "dsn",
             "db_dsn": dsn_arg,
             "db_name": db_name,
-            "workspace_name": workspace_name,
+            "workspace_name": db_name,
         }
-
     else:
-        db_name = input("Database Name: ").strip()
-        workspace_name = db_name
-
-        db_dir = BASE_DIR / workspace_name
-        db_dir.mkdir(parents=True, exist_ok=True)
-
-        ssl_input = input("Use SSL? (yes/no): ").strip().lower()
-        use_ssl = ssl_input in {"yes", "y"}
-
+        db_name = _ask_workspace_name()
+        use_ssl = input("Use SSL? (yes/no): ").strip().lower() in {"yes", "y"}
+        print("Use a dedicated READ-ONLY database account for NatQuery (SELECT only).")
         config = {
             "connection_type": "standard",
             "db_host": input("DB Host (e.g. 127.0.0.1): ").strip(),
             "db_port": input("DB Port (e.g. 5432): ").strip(),
             "db_name": db_name,
             "db_user": input("DB User: ").strip(),
-            "db_password": getpass("DB Password: "),
-            "workspace_name": workspace_name,
+            "workspace_name": db_name,
         }
-
+        password = getpass(
+            "DB Password (blank = read NATQUERY_DB_PASSWORD from the environment): "
+        )
+        if password:
+            config["db_password"] = password
         if use_ssl:
             config["sslmode"] = "require"
 
-    db_dir = BASE_DIR / workspace_name
-    db_dir.mkdir(parents=True, exist_ok=True)
-
-    # LLM config (common to both)
-    config.update(
-        {
-            "llm_provider": input("LLM Provider (groq): ").strip(),
-            "llm_api_key": getpass("LLM API Key: "),
-            "llm_model": input("LLM Model (e.g. llama-3.1-70b-versatile): ").strip(),
-        }
+    config["llm_provider"] = input("LLM Provider (groq): ").strip() or "groq"
+    key = getpass(
+        "LLM API Key (blank = read NATQUERY_LLM_API_KEY from the environment): "
     )
+    if key:
+        config["llm_api_key"] = key
+    config["llm_model"] = input("LLM Model (e.g. llama-3.3-70b-versatile): ").strip()
 
-    config_file = db_dir / "config.json"
+    Settings.save_config(db_name, config)
+    paths.write_private(paths.base_dir() / "current_db", db_name)
 
-    with open(config_file, "w") as f:
-        json.dump(config, f, indent=2)
-
-    # Set active database
-    (BASE_DIR / "current_db").write_text(workspace_name)
-
-    print(f"\nConfiguration saved for workspace: {workspace_name}")
-    print("You can now run: natquery\n")
+    print(f"\nConfiguration saved for workspace: {db_name}")
+    print("Next steps:")
+    print(
+        "  1. natquery policy init        # create an editable access policy, then edit it"
+    )
+    print(
+        "  2. natquery schema refresh     # read the DB structure (needs an admin login)"
+    )
+    print(
+        "  3. natquery user add <name> --roles <role>   # create the first admin account"
+    )
+    print("  4. natquery                    # log in and ask questions\n")
 
 
 def reset_command():
-    """
-    Deletes the active database configuration.
-    """
+    """Remove the active workspace's connection config and cached schema.
 
+    Policy, users and audit/system logs are deliberately kept: they are not
+    secrets of the DB connection and audit history must survive a reset.
+    """
     try:
-        config_path = Settings._get_config_path()
+        workspace = Settings.workspace()
     except RuntimeError:
         print("No active database configured.")
         return
-
-    if config_path.exists():
-        config_path.unlink()
-        print("Configuration removed for active database.")
-    else:
-        print("No configuration found.")
+    removed = []
+    for name in ("config.json", "schema.json"):
+        f = workspace / name
+        if f.exists():
+            f.unlink()
+            removed.append(name)
+    print(f"Removed: {', '.join(removed)}" if removed else "Nothing to remove.")
 
 
 def show_config_command():
-    """
-    Display current active DB configuration (without secrets).
-    """
-
+    """Display the active configuration with every secret masked."""
     try:
         config = Settings.load_config()
     except RuntimeError:
-        print("NatQuery not configured.")
-        print("Run: natquery connect")
+        print("NatQuery not configured.\nRun: natquery connect")
         return
-
-    safe_config = config.copy()
-
-    if "db_password" in safe_config:
-        safe_config["db_password"] = "********"
-
-    if "llm_api_key" in safe_config:
-        safe_config["llm_api_key"] = "********"
-
-    print(json.dumps(safe_config, indent=2))
+    print(json.dumps(redact_secrets(config), indent=2))
 
 
 def select_database_command():
-    """
-    List all configured databases and allow user to select one as the active database.
-    Updates the current_db file without requiring reconnection.
-    """
-
-    BASE_DIR.mkdir(exist_ok=True)
-
-    # Find all database directories (those containing config.json)
+    """List configured workspaces and switch the active one."""
+    base = paths.base_dir()
+    paths.ensure_private_dir(base)
     databases = []
-
-    if BASE_DIR.exists():
-        for item in BASE_DIR.iterdir():
-            if item.is_dir() and (item / "config.json").exists():
-                databases.append(item.name)
-
-    # Sort for consistent ordering
+    for item in base.iterdir():
+        try:
+            paths.safe_name(item.name)
+        except ValueError:
+            continue
+        if item.is_dir() and (item / "config.json").exists():
+            databases.append(item.name)
     databases.sort()
-
     if not databases:
-        print("No configured databases found.")
-        print("Run: natquery connect")
+        print("No configured databases found.\nRun: natquery connect")
         return
 
-    # Get current database
-    current_db_file = BASE_DIR / "current_db"
-    current_db = (
-        current_db_file.read_text().strip() if current_db_file.exists() else None
-    )
-
-    # Display databases
+    cur = base / "current_db"
+    current = cur.read_text().strip() if cur.exists() else None
     print("\n========== Configured Databases ==========")
     for i, db in enumerate(databases, 1):
-        marker = " (current)" if db == current_db else ""
-        print(f"{i}. {db}{marker}")
-
-    print("\n")
-
-    # Get user selection
+        print(f"{i}. {db}{' (current)' if db == current else ''}")
+    print()
     while True:
         try:
-            selection = input("Select a database (enter number): ").strip()
-            index = int(selection) - 1
-
-            if 0 <= index < len(databases):
-                selected_db = databases[index]
-                break
-            else:
-                print(
-                    f"Invalid selection. Please enter a number between 1 and {len(databases)}."
-                )
+            index = int(input("Select a database (enter number): ").strip()) - 1
         except ValueError:
-            print("Invalid input. Please enter a number.")
-
-    # Update current database
-    current_db_file.write_text(selected_db)
-    print(f"\nActive database switched to: {selected_db}")
-
-
-def performance_summary_command():
-    db_name = Settings.get_db_config()["dbname"]
-
-    last = get_last_run(db_name)
-
-    if not last:
-        print("No performance data available.")
-        return
-
-    print("\n====== Performance Summary ======")
-    print(f"Execution Time: {last['execution_time_ms']} ms")
-    print(f"Total Cost: {last['total_cost']}")
-    print(f"Planning Time: {last['planning_time_ms']} ms")
-
-    print("\n--- Suggestions ---")
-    for s in last["suggestions"]:
-        print(f"- {s}")
-
-
-def performance_compare_command():
-    db_name = Settings.get_db_config()["dbname"]
-
-    comp = compare_last_two_runs(db_name)
-
-    if not comp:
-        print("Oops! Not enough data to compare.")
-        return
-
-    print("\n====== Performance Comparison ======")
-
-    print(f"Execution Time Change: {comp['execution_time_diff']} ms")
-    print(f"Cost Change: {comp['cost_diff']}")
-
-    if comp["execution_time_diff"] < 0:
-        print("Booyah! Query improved!")
-    else:
-        print("Oops! Query got slower.")
-
-
-def performance_slowest_command():
-    db_name = Settings.get_db_config()["dbname"]
-
-    slow = get_slowest_queries(db_name)
-
-    print("\n====== Slowest Queries ======")
-
-    for i, q in enumerate(slow, 1):
-        print(f"{i}. {q['execution_time_ms']} ms → {q['sql']}")
+            print("Please enter a number.")
+            continue
+        if 0 <= index < len(databases):
+            break
+        print(f"Please enter a number between 1 and {len(databases)}.")
+    paths.write_private(cur, databases[index])
+    print(f"\nActive database switched to: {databases[index]}")

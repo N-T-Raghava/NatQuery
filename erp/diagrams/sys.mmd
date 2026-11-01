@@ -1,0 +1,37 @@
+erDiagram
+  role_menu_access {
+    int role_id PK
+    int menu_id PK
+  }
+  account {
+    serial account_id PK
+  }
+  menu_module {
+    serial module_id PK
+    text name UK
+  }
+  audit_event {
+    bigserial event_id PK
+    int account_id FK
+    text table_name
+    text record_pk
+    varchar action
+    timestamptz at
+  }
+  menu_item {
+    serial menu_id PK
+    int module_id FK
+    text group_name
+    text title
+    text url
+    text description
+    smallint sort_order
+    boolean is_active
+  }
+  role {
+    serial role_id PK
+  }
+  account o|--o{ audit_event : "account_id"
+  menu_item ||--o| role_menu_access : "menu_id"
+  menu_module ||--o{ menu_item : "module_id"
+  role ||--o| role_menu_access : "role_id"

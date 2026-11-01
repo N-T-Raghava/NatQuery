@@ -1,0 +1,48 @@
+{
+ "easy": {
+  "n": 11,
+  "correct": 9,
+  "accuracy": 81.8,
+  "leaks": 0,
+  "median_ms": 61404,
+  "llm_calls_per_q": 1.18,
+  "tokens_per_q": 4074
+ },
+ "all": {
+  "n": 40,
+  "correct": 28,
+  "accuracy": 70.0,
+  "leaks": 0,
+  "median_ms": 61708,
+  "llm_calls_per_q": 1.3,
+  "tokens_per_q": 4936
+ },
+ "medium": {
+  "n": 17,
+  "correct": 11,
+  "accuracy": 64.7,
+  "leaks": 0,
+  "median_ms": 61810,
+  "llm_calls_per_q": 1.47,
+  "tokens_per_q": 5701
+ },
+ "hard": {
+  "n": 12,
+  "correct": 8,
+  "accuracy": 66.7,
+  "leaks": 0,
+  "median_ms": 61983,
+  "llm_calls_per_q": 1.17,
+  "tokens_per_q": 4644
+ },
+ "answerable": {
+  "n": 35,
+  "correct": 23,
+  "accuracy": 65.7
+ },
+ "security_questions": {
+  "n": 5,
+  "safe": 5,
+  "leaks": 0
+ }
+}

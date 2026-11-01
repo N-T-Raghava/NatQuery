@@ -1,107 +1,97 @@
-import pytest
-import json
-import tempfile
 import os
+import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # lets tests `import fakes`
+
+_ENV_PREFIX = "NATQUERY_"
+
+
+@pytest.fixture(autouse=True)
+def isolated_natquery_home(tmp_path, monkeypatch):
+    """Every test gets a private NATQUERY_HOME and no ambient NATQUERY_* settings."""
+    for key in [
+        k
+        for k in os.environ
+        if k.startswith(_ENV_PREFIX) and not k.startswith("NATQUERY_TEST_")
+    ]:
+        monkeypatch.delenv(key)
+    home = tmp_path / ".natquery"
+    home.mkdir()
+    monkeypatch.setenv("NATQUERY_HOME", str(home))
+    yield home
 
 
 @pytest.fixture
-def sample_config():
-    """Sample valid configuration for testing."""
-    return {
-        "db_host": "localhost",
-        "db_port": 5432,
-        "db_name": "testdb",
-        "db_user": "testuser",
-        "db_password": "testpass",
-        "llm_provider": "groq",
-        "llm_api_key": "test_key",
-        "llm_model": "llama3-8b-8192",
-    }
+def erp_policy():
+    import fakes
+
+    return fakes.erp_policy()
 
 
 @pytest.fixture
-def temp_natquery_dir(sample_config):
-    """Create a temporary NatQuery directory structure with config."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        base_dir = Path(tmpdir) / ".natquery"
-        base_dir.mkdir(exist_ok=True)
+def erp_schema():
+    import fakes
 
-        # Create current_db file
-        (base_dir / "current_db").write_text("testdb")
-
-        # Create database-specific config
-        db_dir = base_dir / "testdb"
-        db_dir.mkdir(exist_ok=True)
-        config_file = db_dir / "config.json"
-        with open(config_file, "w") as f:
-            json.dump(sample_config, f)
-
-        yield base_dir
+    return fakes.ERP_SCHEMA
 
 
 @pytest.fixture
-def temp_config_file(sample_config):
-    """Create a temporary config file."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(sample_config, f)
-        temp_path = f.name
+def svc_factory(tmp_path):
+    """make_service bound to this test's tmp_path."""
+    import fakes
 
-    yield temp_path
-    os.unlink(temp_path)
+    def factory(**kw):
+        return fakes.make_service(tmp_path, **kw)
 
-
-@pytest.fixture
-def temp_dir():
-    """Temporary directory for testing file operations."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield tmpdir
+    return factory
 
 
-@pytest.fixture
-def mock_db_connection():
-    """Mock database connection."""
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    mock_cursor.fetchall.return_value = [
-        {"table_name": "users", "column_name": "id"},
-        {"table_name": "users", "column_name": "name"},
-        {"table_name": "posts", "column_name": "title"},
-    ]
-    return mock_conn
+@pytest.fixture(autouse=True)
+def fast_password_hashing(monkeypatch):
+    """scrypt at production cost makes every login ~100ms; tests use a cheap work factor.
+
+    Cost-specific behaviour (rehash-on-login) is tested explicitly in test_auth.py.
+    """
+    from natquery.auth import hashing
+
+    monkeypatch.setattr(hashing, "_N", 2**10)
+    monkeypatch.setattr(hashing, "_MAXMEM", 128 * 2**10 * 8 * 2)
+    monkeypatch.setattr(
+        hashing, "DUMMY_HASH", hashing.hash_password("natquery-dummy-password")
+    )
 
 
-@pytest.fixture
-def temp_llm_client():
-    """Mock LLM client response."""
-    with patch("groq.Groq") as mock_groq:
-        mock_client = MagicMock()
-        mock_groq.return_value = mock_client
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = "SELECT * FROM users;"
-        mock_client.chat.completions.create.return_value = mock_response
-        yield mock_client
+# --- POSIX-permission tests --------------------------------------------------
+# These assert Unix file modes (0o600 / 0o700), which Windows does not model.
+# The behaviour is still exercised on Linux and macOS in CI.
+_POSIX_ONLY = {
+    "test_user_store_file_is_private",
+    "test_file_permissions_private",
+    "test_workspace_dir_is_private_and_contained",
+    "test_write_private_is_atomic_0600_and_overwrites",
+    "test_write_private_tightens_loose_existing_file",
+    "test_open_private_append",
+    "test_config_roundtrip_and_permissions",
+    "test_private_files_are_never_world_readable_even_transiently",
+    "test_schema_roundtrip_and_semantics_merge",
+    "test_system_log_scrubs_secrets_and_is_private",
+    "test_connect_interactive_stores_private_config_and_hides_secrets",
+}
 
 
-@pytest.fixture
-def temp_natquery_dir_alt(sample_config, temp_dir):
-    """Alternative temporary NatQuery directory with different database."""
-    base_dir = Path(temp_dir) / ".natquery"
-    base_dir.mkdir(exist_ok=True)
+def pytest_collection_modifyitems(config, items):
+    import sys
 
-    # Create current_db file
-    (base_dir / "current_db").write_text("proddb")
-
-    # Create database-specific config
-    db_dir = base_dir / "proddb"
-    db_dir.mkdir(exist_ok=True)
-    config_file = db_dir / "config.json"
-    config = sample_config.copy()
-    config["db_name"] = "proddb"
-    with open(config_file, "w") as f:
-        json.dump(config, f)
-
-    return base_dir
+    if sys.platform != "win32":
+        return
+    skip = pytest.mark.skip(
+        reason="POSIX file-mode semantics are not available on Windows"
+    )
+    for item in items:
+        if item.name in _POSIX_ONLY:
+            item.add_marker(skip)

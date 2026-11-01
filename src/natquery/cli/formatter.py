@@ -1,8 +1,9 @@
-from rich.table import Table
+import math
+
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
-from rich import box
-import math
+from rich.table import Table
 
 console = Console()
 

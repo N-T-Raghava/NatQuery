@@ -1,0 +1,24 @@
+% Defence in depth: what each layer stops. Edit freely.
+\begin{tikzpicture}[
+  lay/.style={draw=nqblue, fill=nqlight, rounded corners=2pt, minimum width=5.2cm, minimum height=0.95cm, align=center, font=\small, text width=4.9cm},
+  why/.style={font=\footnotesize, anchor=west, text width=8.3cm, align=left},
+  flow/.style={-{Latex[length=2mm]}, thick, nqblue}
+]
+\def\dy{-1.25}
+\node[draw=nqred, dashed, rounded corners=2pt, minimum width=5.2cm, minimum height=0.8cm, font=\small] (q) at (0,0) {Question (untrusted text)};
+\foreach \i/\t/\w [count=\k] in {
+  1/{Input guard, rate limit, session check}/{Obvious injection phrases, floods, expired or forged sessions},
+  2/{Role-filtered schema view}/{The model never sees tables or columns the role may not use},
+  3/{SQL enforcer}/{Anything the model still writes: hidden data, writes, dangerous functions, filter bypasses},
+  4/{Read-only transaction, limits}/{Runaway queries, huge results, any write that slipped through},
+  5/{Database role and row-level security}/{A bug in layers 2--3: the database limits the rows again},
+  6/{Result guard}/{Secrets in values (card numbers, tokens) and oversized cells},
+  7/{Audit log}/{Not a barrier but evidence: every decision is recorded and tamper-evident}} {
+  \node[lay] (L\i) at (0,{\k*\dy}) {\textbf{\i}~~\t};
+  \node[why] at ([xshift=0.4cm]L\i.east) {\w};
+}
+\node[draw=nqgreen, rounded corners=2pt, minimum width=5.2cm, minimum height=0.8cm, font=\small] (a) at (0,{8*\dy}) {Answer (only entitled rows)};
+\draw[flow] (q) -- (L1);
+\foreach \i [evaluate=\i as \j using int(\i+1)] in {1,...,6} {\draw[flow] (L\i) -- (L\j);}
+\draw[flow] (L7) -- (a);
+\end{tikzpicture}

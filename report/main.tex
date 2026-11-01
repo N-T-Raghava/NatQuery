@@ -1,0 +1,284 @@
+\documentclass[12pt, a4paper, oneside]{Thesis} % Paper size, default font size and one-sided paper
+\usepackage{wrapfig}
+\usepackage{lscape}
+\usepackage{rotating}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{amsmath}
+
+
+\usepackage{lineno,hyperref}
+\modulolinenumbers[5]
+
+
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{stackengine}
+\usepackage{url}
+\usepackage{numprint}
+\usepackage{caption}
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+%\usepackage[showframe=false]{geometry}
+\usepackage{subfigure}
+
+% ---- added for the NatQuery report (tables, diagrams, charts, code listings) ----
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,shapes.misc,calc,fit,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\definecolor{nqblue}{HTML}{1F4E79}
+\definecolor{nqlight}{HTML}{DCE9F5}
+\definecolor{nqorange}{HTML}{D9822B}
+\definecolor{nqgreen}{HTML}{2E7D4F}
+\definecolor{nqred}{HTML}{B03A2E}
+\definecolor{nqgrey}{HTML}{F2F2F2}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\hdr}{\rowcolor{nqlight}}
+\lstset{basicstyle=\ttfamily\footnotesize, breaklines=true, frame=single, rulecolor=\color{nqblue},
+        backgroundcolor=\color{nqgrey}, columns=fullflexible, keepspaces=true, showstringspaces=false}
+% ---------------------------------------------------------------------------------
+
+\nprounddigits{3}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+
+\setstackEOL{\#}
+\setstackgap{L}{12pt}
+
+
+%\usepackage{subcaption} %incompatible with subfig
+\graphicspath{{Pictures/}} % Specifies the directory where pictures are stored
+\usepackage{natbib} % Use the natbib reference package - read up on this to edit the reference style; if you want text (e.g. Smith et al., 2012) for the in-text references (instead of numbers), remove 'numbers' v
+
+\hypersetup{urlcolor=black, colorlinks=false} % Colors hyperlinks in blue - change to black if annoyingv`
+
+\thesistitle{NatQuery: Natural Language Interface for PostgreSQL
+Databases}
+\supervisor{Professor Pralay Mitra}
+\degree{Bachelor of Technology}
+\degreemajor{Computer Science and Engineering}
+\authors{Tanmai Raghava Nakka}
+\rollno{23CS30035}
+\university{Indian Institute of Technology Kharagpur}
+\department{Department of Computer Science and Engineering}
+\unisite{http://www.iitkgp.ac.in}
+\depsite{http://www.iitkgp.ac.in/department/CS}
+\placeshrt{Kharagpur}
+\placelng{Kharagpur - 721302, India}
+\datesub{November 2, 2026}
+\datesig{November 2, 2026}
+\semsub{Autumn Semester, 2026-27}
+\keywords{Text-to-SQL, Access Control, Row-Level Security, Large Language Models, PostgreSQL}
+\coursecd{Project-I (CS47005) }
+
+\title{\ttitle} % Defines the thesis title - don't touch this
+\begin{document}
+%\makeatletter
+%\renewcommand*{\NAT@nmfmt}[1]{\textsc{#1}}
+%\makeatother
+
+% prints author names as small caps
+
+
+\frontmatter % Use roman page numbering style (i, ii, iii, iv...) for the pre-content pages
+
+\setstretch{1.3} % Line spacing of 1.6 (double line spacing)
+
+% Define the page headers using the FancyHdr package and set up for one-sided printing
+\fancyhead{} % Clears all page headers and footers
+\rhead{\thepage} % Sets the right side header to show the page number
+\lhead{} % Clears the left side page header
+
+%\pagestyle{fancy} % Finally, use the "fancy" page style to implement the FancyHdr headers
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % New command to make the lines in the title page
+
+% PDF meta-data
+\hypersetup{pdftitle={\ttitle}}
+\hypersetup{pdfsubject=\subjectname}
+\hypersetup{pdfauthor=\authornames}
+\hypersetup{pdfkeywords=\keywordnames}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+\maketitle
+%\titlepg % Add a gap in the Contents, for aesthetics
+
+\clearpage % Start a new page
+
+%----------------------------------------------------------------------------------------
+%	DECLARATION PAGE
+%	Your institution may give you a different text to place here
+%----------------------------------------------------------------------------------------
+
+
+\Declaration% Add a gap in the Contents, for aesthetics
+
+
+%----------------------------------------------------------------------------------------
+%	CERTIFICATE PAGE
+%----------------------------------------------------------------------------------------
+
+\addtotoc{Certificate} % Add the "Abstract" page entry to the Contents
+
+\certificate{\addtocontents{toc}{} % Add a gap in the Contents, for aesthetics
+
+\clearpage % Start a new page
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT PAGE
+%----------------------------------------------------------------------------------------
+
+\addtotoc{Abstract} % Add the "Abstract" page entry to the Contents
+
+\abstract{\addtocontents{toc}{} % Add a gap in the Contents, for aesthetics
+
+Large language models can turn English questions into SQL, but a generated query cannot be trusted
+to run: it may reach data the asker has no right to see, and in a university ERP one such query
+is a breach. This thesis presents \emph{NatQuery}, an open-source Python library and command-line
+tool that converts English questions into PostgreSQL queries \emph{under the access rules of the
+person asking}. Its core rule is that the language model only proposes SQL and never executes it:
+every query is parsed, checked against a role-specific view of the schema, rewritten with
+mandatory row filters and column masks, and recorded in a hash-chained audit log before the
+database is touched. Roles are declared in one policy file, authentication is pluggable, and
+PostgreSQL row-level security acts as a second, independent line of defence.
+
+NatQuery reaches 45.6\% official execution accuracy on BIRD Mini-Dev (50.6\% under a numerically tolerant scorer) using an open-weight model on a
+free-tier API, with no fine-tuning. On AdventureWorks, 560 hostile-SQL runs and 30
+natural-language attacks leaked no restricted data. On a small-scale synthetic university ERP built for this work (87 tables, 549 columns, 10 roles), it answered 28 of 40 role-specific questions correctly and handled all five access-control questions safely.
+}
+
+\clearpage % Start a new page
+
+
+
+%----------------------------------------------------------------------------------------
+%	ACKNOWLEDGEMENTS
+%----------------------------------------------------------------------------------------
+
+\setstretch{1.3} % Reset the line-spacing to 1.3 for body text (if it has changed)
+
+\acknowledgements{\addtocontents{toc}{}%\vspace{1em}} % Add a gap in the Contents, for aesthetics
+
+Enter acknowledgement content here.
+
+}
+\clearpage % Start a new page
+
+%----------------------------------------------------------------------------------------
+%	LIST OF CONTENTS/FIGURES/TABLES PAGES
+%----------------------------------------------------------------------------------------
+
+\pagestyle{fancy} % The page style headers have been "empty" all this time, now use the "fancy" headers as defined before to bring them back
+
+\lhead{\emph{Contents}} % Set the left side page header to "Contents"
+\tableofcontents % Write out the Table of Contents
+
+\lhead{\emph{List of Figures}} % Set the left side page header to "List of Figures"
+\listoffigures % Write out the List of Figures
+
+\lhead{\emph{List of Tables}} % Set the left side page header to "List of Tables"
+\listoftables % Write out the List of Tables
+
+%----------------------------------------------------------------------------------------
+%	ABBREVIATIONS
+%----------------------------------------------------------------------------------------
+
+\clearpage % Start a new page
+
+\setstretch{1.5} % Set the line spacing to 1.5, this makes the following tables easier to read
+
+\lhead{\emph{Abbreviations}} % Set the left side page header to "Abbreviations"
+\listofsymbols{ll} % Include a list of Abbreviations (a table of two columns)
+{
+\textbf{AST} & \textbf{A}bstract \textbf{S}yntax \textbf{T}ree \\
+\textbf{BIRD} & \textbf{BI}g Bench for la\textbf{R}ge-scale \textbf{D}atabase grounded text-to-SQL (benchmark) \\
+\textbf{CLI} & \textbf{C}ommand-\textbf{L}ine \textbf{I}nterface \\
+\textbf{DDL} & \textbf{D}ata \textbf{D}efinition \textbf{L}anguage \\
+\textbf{ERP} & \textbf{E}nterprise \textbf{R}esource \textbf{P}lanning \\
+\textbf{EX} & \textbf{Ex}ecution accuracy (BIRD metric) \\
+\textbf{GUC} & \textbf{G}rand \textbf{U}nified \textbf{C}onfiguration (PostgreSQL setting) \\
+\textbf{HMAC} & \textbf{H}ash-based \textbf{M}essage \textbf{A}uthentication \textbf{C}ode \\
+\textbf{LLM} & \textbf{L}arge \textbf{L}anguage \textbf{M}odel \\
+\textbf{RLS} & \textbf{R}ow-\textbf{L}evel \textbf{S}ecurity \\
+\textbf{R-VES} & \textbf{R}eward-based \textbf{V}alid \textbf{E}fficiency \textbf{S}core (BIRD metric) \\
+\textbf{SQL} & \textbf{S}tructured \textbf{Q}uery \textbf{L}anguage \\
+\textbf{TPM} & \textbf{T}okens \textbf{P}er \textbf{M}inute \\
+}
+
+%----------------------------------------------------------------------------------------
+%	SYMBOLS
+%----------------------------------------------------------------------------------------
+
+\clearpage % Start a new page
+
+\lhead{\emph{Symbols}} % Set the left side page header to "Symbols"
+
+\listofnomenclature{lll} % Include a list of Symbols (a two column table)
+{
+$r_i$ & $i$-th audit record & \\
+$h_i$ & hash stored in the $i$-th audit record & \\
+$h_0$ & genesis hash (64 zeros) & \\
+$K$ & optional audit key (HMAC) & \\
+% Symbol & Name & Unit \\
+
+}
+
+%----------------------------------------------------------------------------------------
+%	THESIS CONTENT - CHAPTERS
+%----------------------------------------------------------------------------------------
+
+\mainmatter % Begin numeric (1,2,3...) page numbering
+
+\pagestyle{fancy} % Return the page headers back to the "fancy" style
+
+\input{Chapters/Chapter1}
+\input{Chapters/Chapter2}
+\input{Chapters/Chapter3}
+\input{Chapters/Chapter4}
+\input{Chapters/Chapter5}
+\input{Chapters/Chapter6}
+
+%----------------------------------------------------------------------------------------
+%	THESIS CONTENT - APPENDICES
+%----------------------------------------------------------------------------------------
+
+\addtocontents{toc}{\vspace{2em}} % Add a gap in the Contents, for aesthetics
+
+\appendix % Cue to tell LaTeX that the following 'chapters' are Appendices
+
+\input{Appendices/AppendixA}
+\input{Appendices/AppendixB}
+\input{Appendices/AppendixC}
+
+\addtocontents{toc}{} % Add a gap in the Contents, for aesthetics
+
+\backmatter
+
+%----------------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+%----------------------------------------------------------------------------------------
+%\nocite{*}
+\label{Bibliography}
+
+\lhead{\emph{Bibliography}} % Change the page header to say "Bibliography"
+
+\bibliographystyle{apalike} % Use the "custom" BibTeX style for formatting the Bibliography
+
+\bibliography{Bibliography} % The references (bibliography) information are stored in the file named "Bibliography.bib"
+
+\end{document}

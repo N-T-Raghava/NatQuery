@@ -1,0 +1,169 @@
+{
+  "questions_run": 500,
+  "gold_failed_on_postgres": 0,
+  "scored": 500,
+  "model": "openai/gpt-oss-120b",
+  "accuracy": {
+    "raw_ok": 50.2,
+    "enforced_ok": 50.0,
+    "natquery_ok": 50.6
+  },
+  "by_difficulty": {
+    "simple": {
+      "n": 148,
+      "raw_ok": 60.8,
+      "enforced_ok": 60.8,
+      "natquery_ok": 61.5
+    },
+    "moderate": {
+      "n": 250,
+      "raw_ok": 49.2,
+      "enforced_ok": 48.8,
+      "natquery_ok": 49.2
+    },
+    "challenging": {
+      "n": 102,
+      "raw_ok": 37.3,
+      "enforced_ok": 37.3,
+      "natquery_ok": 38.2
+    }
+  },
+  "by_database": {
+    "california_schools": {
+      "n": 30,
+      "raw_ok": 30.0,
+      "enforced_ok": 30.0,
+      "natquery_ok": 30.0
+    },
+    "card_games": {
+      "n": 52,
+      "raw_ok": 46.2,
+      "enforced_ok": 46.2,
+      "natquery_ok": 46.2
+    },
+    "codebase_community": {
+      "n": 49,
+      "raw_ok": 57.1,
+      "enforced_ok": 55.1,
+      "natquery_ok": 57.1
+    },
+    "debit_card_specializing": {
+      "n": 30,
+      "raw_ok": 36.7,
+      "enforced_ok": 36.7,
+      "natquery_ok": 36.7
+    },
+    "european_football_2": {
+      "n": 51,
+      "raw_ok": 58.8,
+      "enforced_ok": 58.8,
+      "natquery_ok": 62.7
+    },
+    "financial": {
+      "n": 32,
+      "raw_ok": 18.8,
+      "enforced_ok": 18.8,
+      "natquery_ok": 18.8
+    },
+    "formula_1": {
+      "n": 66,
+      "raw_ok": 42.4,
+      "enforced_ok": 42.4,
+      "natquery_ok": 42.4
+    },
+    "student_club": {
+      "n": 48,
+      "raw_ok": 62.5,
+      "enforced_ok": 62.5,
+      "natquery_ok": 62.5
+    },
+    "superhero": {
+      "n": 52,
+      "raw_ok": 75.0,
+      "enforced_ok": 75.0,
+      "natquery_ok": 75.0
+    },
+    "thrombosis_prediction": {
+      "n": 50,
+      "raw_ok": 50.0,
+      "enforced_ok": 50.0,
+      "natquery_ok": 50.0
+    },
+    "toxicology": {
+      "n": 40,
+      "raw_ok": 52.5,
+      "enforced_ok": 52.5,
+      "natquery_ok": 52.5
+    }
+  },
+  "enforcer": {
+    "first_sql_accepted": 484,
+    "first_sql_rejected": 10,
+    "rejected_but_raw_correct": 1,
+    "accepted_and_raw_correct_but_enforced_wrong": 0,
+    "accepted_raw_wrong_enforced_right": 0,
+    "rejection_reasons": {
+      "rejected:cross_join": 6,
+      "rejected:unresolved_reference": 4
+    }
+  },
+  "pipeline": {
+    "outcomes": {
+      "failed": 4,
+      "ok": 490,
+      "refused": 6
+    },
+    "questions_with_repairs": 15,
+    "repair_rescued": 3,
+    "unanswerable_replies": 6,
+    "output_cut_by_max_tokens": 0,
+    "result_truncated_by_row_cap": 0
+  },
+  "schema_retrieval": {
+    "questions": 500,
+    "all_needed_tables_in_prompt": 500,
+    "pct_complete": 100.0,
+    "natquery_accuracy_when_complete": 50.6,
+    "natquery_accuracy_when_table_missing": 0.0,
+    "n_missing": 0,
+    "unanswerable_when_complete": 6,
+    "unanswerable_when_table_missing": 0
+  },
+  "latency_ms": {
+    "end_to_end_excl_pacing": {
+      "p50": 1077.4,
+      "p95": 2185.6,
+      "mean": 1193.9
+    },
+    "llm": {
+      "p50": 1046.5,
+      "p95": 2116.1,
+      "mean": 1160.4
+    },
+    "enforcer": {
+      "p50": 4.3,
+      "p95": 10.8,
+      "mean": 5.1
+    },
+    "database": {
+      "p50": 3.5,
+      "p95": 138.6,
+      "mean": 28.9
+    }
+  },
+  "efficiency": {
+    "n_compared": 253,
+    "median_db_time_ratio_vs_gold": 1.08,
+    "p95_db_time_ratio_vs_gold": 2.0,
+    "gold_ms_p50": 4.1,
+    "gold_ms_p95": 235.3
+  },
+  "cost": {
+    "tokens_in": 1045820,
+    "tokens_out": 93182,
+    "usd_total": 0.2128,
+    "usd_per_question": 0.00043,
+    "mean_llm_calls": 1.03,
+    "price_basis": "$0.15/M input, $0.6/M output (Groq list price)"
+  }
+}

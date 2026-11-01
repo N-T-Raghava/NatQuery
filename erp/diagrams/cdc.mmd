@@ -1,0 +1,36 @@
+erDiagram
+  job_posting {
+    serial posting_id PK
+    int company_id FK
+    text role_title
+    varchar posting_type
+    numeric ctc_lakhs
+    numeric min_cgpa
+    date deadline
+  }
+  job_application {
+    serial job_application_id PK
+    int posting_id FK
+    int student_id FK
+    varchar status
+    timestamptz applied_at
+  }
+  company {
+    serial company_id PK
+    text name UK
+    text sector
+  }
+  offer {
+    serial offer_id PK
+    int job_application_id FK
+    numeric ctc_offered_lakhs
+    date offered_on
+    boolean accepted
+  }
+  student {
+    serial student_id PK
+  }
+  company ||--o{ job_posting : "company_id"
+  job_application ||--o| offer : "job_application_id"
+  job_posting ||--o{ job_application : "posting_id"
+  student ||--o{ job_application : "student_id"

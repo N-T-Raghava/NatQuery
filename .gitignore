@@ -209,3 +209,18 @@ __marimo__/
 
 #.natquery files
 .natquery/
+# NatQuery workspace / local artifacts
+.natquery/
+*.db
+erp/bench/*.log
+# LaTeX build output
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.bbl
+report/*.blg
+report/*.lof
+report/*.lot
+report/*.fls
+report/*.fdb_latexmk
