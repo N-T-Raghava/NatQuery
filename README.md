@@ -21,7 +21,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the security model and know
 
 ## Benchmark
 
-On BIRD Mini-Dev (PostgreSQL, 500 questions) with the open `gpt-oss-120b` model, NatQuery scores **45.6% official execution accuracy** with the security layer on, at about 1.1 s per question and $0.0004 per question. Full results and limitations: [docs/BIRD_REPORT.md](docs/BIRD_REPORT.md). Reproduction: [benchmarks/bird](benchmarks/bird/README.md).
+On BIRD Mini-Dev (PostgreSQL, 500 questions) with the open `gpt-oss-120b` model, NatQuery scores **50.6% execution accuracy** with the security layer on, at about 1.1 s per question and $0.0004 per question. Full results and limitations: [docs/BIRD_REPORT.md](docs/BIRD_REPORT.md). Reproduction: [benchmarks/bird](benchmarks/bird/README.md).
 
 ## Security testing
 
