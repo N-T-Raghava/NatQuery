@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "natquery"
 dynamic = ["version"]                      # single source of truth: natquery/__init__.py
-description = "Ask PostgreSQL questions in plain English through a secure CLI with authentication, role-based access control and tamper-evident auditing"
+description = "Ask PostgreSQL questions in plain English through a secure CLI with authentication, role-based access control and evidence auditing."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -13,7 +13,7 @@ authors = [
     {name = "Tanmai Raghava", email = "tanmairaghava@kgpian.iitkgp.ac.in"},
     {name = "Krishna Chaitanya", email = "krish89@kgpian.iitkgp.ac.in"},
     {name = "Thania Joshi", email = "thaniavjoshi@kgpian.iitkgp.ac.in"},
-    {name = "Lokeswara Reddy", email = "lokeswarareddy2006@gmail.com"},
+    {name = "Pulugu Lokeswara Reddy", email = "lokeswarareddy2006@gmail.com"},
     {name = "Manasa Vankam", email = "vankammanasa45@gmail.com"}
 ]
 keywords = ["nlp", "database", "postgres", "natural-language", "cli", "llm", "rbac", "security", "erp"]

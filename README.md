@@ -53,7 +53,7 @@ natquery user add alice --roles student     # see `natquery user add --help`
 natquery                         # interactive shell: log in, then ask questions in English
 ```
 
-## Repository layout
+## Repository structure
 
 | Path | Content |
 |---|---|
@@ -64,4 +64,4 @@ natquery                         # interactive shell: log in, then ask questions
 | `benchmarks/benchmarker.py`, `benchmarks/results/` | Earlier v1 query-optimisation benchmark and its results |
 | `erp/` | Synthetic university ERP test bed (87 tables, row-level security) and 40-question benchmark |
 | `docs/` | Architecture and security model, BIRD report, security report |
-| `report/` | LaTeX source of the B.Tech project report |
+| `report/` | LaTeX source of the B.Tech project report. |
